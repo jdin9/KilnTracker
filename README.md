@@ -62,3 +62,8 @@ src/
 3. Run migrations once the schema stabilizes: `npx prisma migrate dev`.
 4. Start the dev server: `npm run dev`.
 
+## Previewing the draft dashboard
+Until the Next.js tooling is wired up in this repo, you can view a static preview of the draft dashboard layout at
+`preview/dashboard.html`. From the repo root run `python -m http.server 8000` and open
+`http://localhost:8000/preview/dashboard.html` in your browser.
+
