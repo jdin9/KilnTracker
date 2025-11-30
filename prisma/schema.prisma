@@ -1,0 +1,276 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum ControlType {
+  MANUAL_SWITCHES
+  MANUAL_DIAL
+}
+
+enum FiringType {
+  BISQUE
+  GLAZE
+}
+
+enum FillLevel {
+  SPREAD_OUT
+  MODERATELY_FULL
+  VERY_FULL
+}
+
+enum FiringStatus {
+  ONGOING
+  COMPLETED
+  ABORTED
+  TEST
+}
+
+enum FiringEventType {
+  SWITCH_ON
+  SWITCH_OFF
+  LID_OPEN
+  LID_CLOSED
+  TEMP_READING
+  NOTE
+}
+
+enum SwitchPosition {
+  OFF
+  LOW
+  MED
+  HIGH
+}
+
+enum StepType {
+  GLAZE
+  FIRING
+}
+
+enum ApplicationMethod {
+  DIP
+  BRUSH
+  POUR
+  SPRAY
+  OTHER
+}
+
+model Studio {
+  id         String     @id @default(cuid())
+  name       String
+  notes      String?
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+
+  users      User[]
+  kilns      Kiln[]
+  glazes     Glaze[]
+  clayBodies ClayBody[]
+  projects   Project[]
+  firings    Firing[]
+}
+
+model User {
+  id            String   @id @default(cuid())
+  email         String   @unique
+  passwordHash  String
+  displayName   String
+  studioId      String
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  studio        Studio   @relation(fields: [studioId], references: [id], onDelete: Cascade)
+  firingsStarted Firing[] @relation("FiringStartedBy")
+  projects      Project[]
+  projectSteps  ProjectStep[]
+}
+
+model Kiln {
+  id              String                   @id @default(cuid())
+  studioId        String
+  name            String
+  controlType     ControlType
+  numSwitches     Int?
+  notes           String?
+  createdAt       DateTime                 @default(now())
+  updatedAt       DateTime                 @updatedAt
+
+  studio          Studio                   @relation(fields: [studioId], references: [id], onDelete: Cascade)
+  firings         Firing[]
+  maintenanceLogs KilnMaintenanceEntry[]
+
+  @@index([studioId])
+}
+
+model KilnMaintenanceEntry {
+  id              String   @id @default(cuid())
+  kilnId          String
+  date            DateTime
+  maintenanceType String
+  notes           String?
+
+  kiln            Kiln     @relation(fields: [kilnId], references: [id], onDelete: Cascade)
+
+  @@index([kilnId, date])
+}
+
+model Firing {
+  id               String        @id @default(cuid())
+  kilnId           String
+  startedByUserId  String
+  firingType       FiringType
+  targetCone       String
+  fillLevel        FillLevel
+  outsideTempStart Float
+  startTime        DateTime      @default(now())
+  sitterDropTime   DateTime?
+  coneUsed         String?
+  status           FiringStatus  @default(ONGOING)
+  maxTemp          Float?
+  notes            String?
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+
+  kiln             Kiln          @relation(fields: [kilnId], references: [id], onDelete: Cascade)
+  startedBy        User          @relation("FiringStartedBy", fields: [startedByUserId], references: [id])
+  events           FiringEvent[]
+  projectSteps     ProjectStepFiring[]
+
+  @@index([kilnId])
+  @@index([firingType])
+  @@index([status])
+  @@index([startTime])
+  @@index([targetCone])
+  @@index([coneUsed])
+  @@index([maxTemp])
+}
+
+model FiringEvent {
+  id                String          @id @default(cuid())
+  firingId          String
+  timestamp         DateTime        @default(now())
+  eventType         FiringEventType
+  switchIndex       Int?
+  newSwitchPosition SwitchPosition?
+  dialSetting       String?
+  pyrometerTemp     Float?
+  noteText          String?
+
+  firing            Firing          @relation(fields: [firingId], references: [id], onDelete: Cascade)
+
+  @@index([firingId, timestamp])
+}
+
+model Glaze {
+  id        String   @id @default(cuid())
+  studioId  String
+  name      String
+  brand     String?
+  color     String?
+  coneRange String?
+  notes     String?
+
+  studio    Studio   @relation(fields: [studioId], references: [id], onDelete: Cascade)
+  steps     ProjectStepGlaze[]
+
+  @@index([studioId, name])
+}
+
+model ClayBody {
+  id                 String   @id @default(cuid())
+  studioId           String
+  name               String
+  typicalBisqueTemp  Float?
+  notes              String?
+
+  studio             Studio   @relation(fields: [studioId], references: [id], onDelete: Cascade)
+  projects           Project[]
+
+  @@index([studioId, name])
+}
+
+model Project {
+  id              String      @id @default(cuid())
+  studioId        String
+  createdByUserId String
+  clayBodyId      String
+  hasBeenBisque   Boolean
+  bisqueTemp      Float?
+  makerName       String
+  title           String?
+  createdAt       DateTime    @default(now())
+  notes           String?
+
+  studio          Studio      @relation(fields: [studioId], references: [id], onDelete: Cascade)
+  createdBy       User        @relation(fields: [createdByUserId], references: [id])
+  clayBody        ClayBody    @relation(fields: [clayBodyId], references: [id])
+  steps           ProjectStep[]
+
+  @@index([studioId])
+  @@index([clayBodyId])
+  @@index([createdAt])
+  @@index([studioId, createdAt])
+}
+
+model ProjectStep {
+  id              String     @id @default(cuid())
+  projectId       String
+  stepOrder       Int
+  stepType        StepType
+  createdAt       DateTime   @default(now())
+  createdByUserId String
+  notes           String?
+
+  project         Project    @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  createdBy       User       @relation(fields: [createdByUserId], references: [id])
+  glazeStep       ProjectStepGlaze?
+  firingStep      ProjectStepFiring?
+  photos          Photo[]
+
+  @@unique([projectId, stepOrder])
+  @@index([createdByUserId])
+}
+
+model ProjectStepGlaze {
+  stepId             String            @id
+  glazeId            String
+  numCoats           Float
+  applicationMethod  ApplicationMethod
+  patternDescription String?
+
+  step               ProjectStep       @relation(fields: [stepId], references: [id], onDelete: Cascade)
+  glaze              Glaze             @relation(fields: [glazeId], references: [id], onDelete: Cascade)
+
+  @@index([glazeId])
+}
+
+model ProjectStepFiring {
+  stepId        String   @id
+  firingId      String?
+  localCone     String?
+  localPeakTemp Float?
+  firingDate    DateTime?
+
+  step          ProjectStep @relation(fields: [stepId], references: [id], onDelete: Cascade)
+  firing        Firing?     @relation(fields: [firingId], references: [id], onDelete: Cascade)
+
+  @@index([firingId])
+}
+
+model Photo {
+  id                 String      @id @default(cuid())
+  parentStepId       String
+  filePathOrUrl      String
+  isCoverForProject  Boolean     @default(false)
+  createdAt          DateTime    @default(now())
+
+  parentStep         ProjectStep @relation(fields: [parentStepId], references: [id], onDelete: Cascade)
+
+  @@index([parentStepId])
+  @@index([isCoverForProject])
+}
+
