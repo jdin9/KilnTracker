@@ -1,9 +1,10 @@
 'use client';
 
 import React, { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import { notFound } from "next/navigation";
 
-type ActivityType = "dial" | "switch" | "temp" | "note" | "shutdown";
+type ActivityType = "dial" | "switch" | "temp" | "note" | "shutdown" | "close";
 
 type Activity = {
   id: string;
@@ -285,9 +286,14 @@ export default function FiringDetailPage({ params }: { params: { id: string } })
 
     setActivities((prev) => [...prev, activity]);
 
-    if (form.type === "shutdown") {
+    if (form.type === "close") {
       const endTime = new Date(form.timestamp).toISOString();
-      const updatedFiring: Firing = { ...firing, status: "closed", endTime, maxTemp: activity.pyrometerTemp };
+      const updatedFiring: Firing = {
+        ...firing,
+        status: "closed",
+        endTime,
+        maxTemp: activity.pyrometerTemp ?? firing.maxTemp,
+      };
       setFiring(updatedFiring);
 
       if (typeof window !== "undefined") {
@@ -309,7 +315,7 @@ export default function FiringDetailPage({ params }: { params: { id: string } })
           ...firing,
           status: "closed",
           endTime,
-          maxTemp: activity.pyrometerTemp,
+          maxTemp: activity.pyrometerTemp ?? firing.maxTemp,
         };
         window.localStorage.setItem(
           HISTORY_DETAIL_KEY,
@@ -334,7 +340,7 @@ export default function FiringDetailPage({ params }: { params: { id: string } })
               firingType: firing.firingType,
               targetCone: firing.targetCone,
               targetTemp: firing.targetTemp,
-              tempReached: activity.pyrometerTemp,
+              tempReached: activity.pyrometerTemp ?? firing.maxTemp,
               status: "Completed",
               endTime,
             },
@@ -356,16 +362,24 @@ export default function FiringDetailPage({ params }: { params: { id: string } })
     <main className="bg-gradient-to-br from-amber-50 via-white to-orange-50 p-6">
       <div className="mx-auto max-w-5xl space-y-8">
         <header className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-          <div className="space-y-1">
-            <p className="text-sm font-semibold uppercase tracking-wide text-amber-700">Kiln Tracker</p>
-            <h1 className="text-3xl font-bold text-gray-900">{firing.kilnName} firing</h1>
-            <p className="text-sm text-gray-700">
-              {firing.firingType} • Target cone {firing.targetCone} • {statusLabel}
-            </p>
-            <p className="text-sm text-gray-600">
-              {new Date(firing.startTime).toLocaleString()}
-              {firing.endTime && ` → ${new Date(firing.endTime).toLocaleString()}`} {firing.maxTemp && `| Max temp ${firing.maxTemp}°F`}
-            </p>
+          <div className="space-y-3">
+            <Link
+              href="/firings"
+              className="inline-flex w-fit items-center gap-2 text-sm font-semibold text-amber-800 underline-offset-4 hover:underline"
+            >
+              ← Back to firings
+            </Link>
+            <div className="space-y-1">
+              <p className="text-sm font-semibold uppercase tracking-wide text-amber-700">Kiln Tracker</p>
+              <h1 className="text-3xl font-bold text-gray-900">{firing.kilnName} firing</h1>
+              <p className="text-sm text-gray-700">
+                {firing.firingType} • Target cone {firing.targetCone} • {statusLabel}
+              </p>
+              <p className="text-sm text-gray-600">
+                {new Date(firing.startTime).toLocaleString()}
+                {firing.endTime && ` → ${new Date(firing.endTime).toLocaleString()}`} {firing.maxTemp && `| Max temp ${firing.maxTemp}°F`}
+              </p>
+            </div>
           </div>
           <div className="rounded-2xl bg-white/80 p-4 shadow-sm ring-1 ring-amber-100">
             <dl className="grid grid-cols-2 gap-x-6 gap-y-2 text-sm text-gray-700">
@@ -462,6 +476,7 @@ export default function FiringDetailPage({ params }: { params: { id: string } })
                   <option value="temp">Temperature reading</option>
                   <option value="note">Note</option>
                   <option value="shutdown">Turn kiln off</option>
+                  <option value="close">Close firing (no more actions)</option>
                 </select>
               </div>
 
@@ -523,7 +538,7 @@ export default function FiringDetailPage({ params }: { params: { id: string } })
                   className="w-full rounded border px-2 py-1"
                   value={form.pyrometerTemp}
                   onChange={(e) => setForm({ ...form, pyrometerTemp: e.target.value })}
-                  placeholder="Optional, required on shutdown"
+                  placeholder="Optional; required when turning kiln off"
                 />
               </div>
 
