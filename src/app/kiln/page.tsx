@@ -8,7 +8,7 @@ type OpenFiring = {
   kilnName: string;
   status: string;
   targetCone: string;
-  targetTemp: number;
+  targetTemp?: number;
   startedAt: string;
 };
 
@@ -25,7 +25,7 @@ type FiringHistoryRow = {
   location?: string;
   firingType?: string;
   targetCone: string;
-  targetTemp: number;
+  targetTemp?: number;
   tempReached?: number;
   status: string;
   loadPhotos?: string[];
@@ -183,7 +183,9 @@ export default function KilnDashboardPage() {
                 <div className="space-y-1">
                   <p className="text-sm font-semibold text-amber-700">{firing.kilnName}</p>
                   <h3 className="text-lg font-bold text-gray-900">Cone {firing.targetCone}</h3>
-                  <p className="text-sm text-gray-700">Target {firing.targetTemp}°F</p>
+                  <p className="text-sm text-gray-700">
+                    Target {firing.targetTemp ? `${firing.targetTemp}°F` : "—"}
+                  </p>
                   <p className="text-xs text-gray-500">
                     Started {new Date(firing.startedAt).toLocaleString()}
                   </p>
@@ -238,8 +240,12 @@ export default function KilnDashboardPage() {
                     </td>
                     <td className="px-6 py-4 text-sm text-gray-700">{firing.kiln}</td>
                     <td className="px-6 py-4 text-sm text-gray-700">Cone {firing.targetCone}</td>
-                    <td className="px-6 py-4 text-sm text-gray-700">{firing.targetTemp}°F</td>
-                    <td className="px-6 py-4 text-sm text-gray-700">{firing.tempReached}°F</td>
+                    <td className="px-6 py-4 text-sm text-gray-700">
+                      {firing.targetTemp ? `${firing.targetTemp}°F` : "—"}
+                    </td>
+                    <td className="px-6 py-4 text-sm text-gray-700">
+                      {firing.tempReached ? `${firing.tempReached}°F` : "—"}
+                    </td>
                     <td className="px-6 py-4 text-right">
                       <Link
                         href={`/firings/${firing.id}`}

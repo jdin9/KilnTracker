@@ -130,6 +130,9 @@ const defaultHistoryDetails: Record<string, { firing: Firing; activities: Activi
   },
 };
 
+const OPEN_DETAIL_KEY = "kiln-open-firing-details";
+const HISTORY_DETAIL_KEY = "kiln-firing-history-details";
+
 const nowLocal = () => {
   const date = new Date();
   const pad = (n: number) => n.toString().padStart(2, "0");
@@ -139,7 +142,7 @@ const nowLocal = () => {
 const getStoredFiring = (id: string): Firing | null => {
   if (typeof window === "undefined") return null;
 
-  const detailedStore = window.localStorage.getItem("kiln-open-firing-details");
+  const detailedStore = window.localStorage.getItem(OPEN_DETAIL_KEY);
   if (detailedStore) {
     try {
       const parsed = JSON.parse(detailedStore);
@@ -169,6 +172,17 @@ const getStoredFiring = (id: string): Firing | null => {
 
 const getStoredHistoryFiring = (id: string): Firing | null => {
   if (typeof window === "undefined") return null;
+
+  const historyDetailStore = window.localStorage.getItem(HISTORY_DETAIL_KEY);
+  if (historyDetailStore) {
+    try {
+      const parsed = JSON.parse(historyDetailStore);
+      if (parsed[id]) return parsed[id] as Firing;
+    } catch (error) {
+      console.error("Unable to parse firing history details", error);
+    }
+  }
+
   const history = window.localStorage.getItem("kiln-firing-history");
   const parsed = history ? JSON.parse(history) : [];
   const match = parsed.find((item: any) => item.id === id);
@@ -282,6 +296,29 @@ export default function FiringDetailPage({ params }: { params: { id: string } })
         const remaining = parsed.filter((item: any) => item.id !== firing.id);
         window.localStorage.setItem("kiln-open-firings", JSON.stringify(remaining));
 
+        const openDetailRaw = window.localStorage.getItem(OPEN_DETAIL_KEY);
+        const openDetails = openDetailRaw ? JSON.parse(openDetailRaw) : {};
+        if (openDetails[firing.id]) {
+          delete openDetails[firing.id];
+          window.localStorage.setItem(OPEN_DETAIL_KEY, JSON.stringify(openDetails));
+        }
+
+        const historyDetailRaw = window.localStorage.getItem(HISTORY_DETAIL_KEY);
+        const historyDetails = historyDetailRaw ? JSON.parse(historyDetailRaw) : {};
+        const closedDetail: Firing = {
+          ...firing,
+          status: "closed",
+          endTime,
+          maxTemp: activity.pyrometerTemp,
+        };
+        window.localStorage.setItem(
+          HISTORY_DETAIL_KEY,
+          JSON.stringify({
+            ...historyDetails,
+            [firing.id]: closedDetail,
+          }),
+        );
+
         const history = window.localStorage.getItem("kiln-firing-history");
         const historyParsed = history ? JSON.parse(history) : [];
         window.localStorage.setItem(
@@ -296,7 +333,7 @@ export default function FiringDetailPage({ params }: { params: { id: string } })
               location: firing.location,
               firingType: firing.firingType,
               targetCone: firing.targetCone,
-              targetTemp: firing.targetTemp ?? 0,
+              targetTemp: firing.targetTemp,
               tempReached: activity.pyrometerTemp,
               status: "Completed",
               endTime,

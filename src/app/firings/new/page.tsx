@@ -65,7 +65,7 @@ export default function NewFiringPage() {
       kilnName: kiln?.name ?? "Unknown kiln",
       status: "Started",
       targetCone: payload.target_cone,
-      targetTemp: payload.target_temp ?? 0,
+      targetTemp: payload.target_temp,
       startedAt: payload.start_time,
     };
 
