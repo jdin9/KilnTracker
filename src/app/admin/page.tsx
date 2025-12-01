@@ -34,7 +34,6 @@ type Kiln = {
   type: KilnType;
   manualControl?: ManualControl;
   switches?: number;
-  firingCone: string;
 };
 
 const initialUsers: User[] = [
@@ -101,7 +100,6 @@ const initialKilns: Kiln[] = [
     id: 1,
     nickname: "Studio Workhorse",
     type: "digital",
-    firingCone: "6",
   },
   {
     id: 2,
@@ -109,14 +107,12 @@ const initialKilns: Kiln[] = [
     type: "manual",
     manualControl: "switches",
     switches: 3,
-    firingCone: "04",
   },
   {
     id: 3,
     nickname: "Glaze Trials",
     type: "manual",
     manualControl: "dial",
-    firingCone: "06",
   },
 ];
 
@@ -142,7 +138,6 @@ export default function AdminPage() {
     type: "digital",
     manualControl: "switches",
     switches: 3,
-    firingCone: "06",
   });
   const [editingKilnId, setEditingKilnId] = useState<number | null>(null);
   const [colors, setColors] = useState<StudioColor[]>(initialColors);
@@ -191,7 +186,6 @@ export default function AdminPage() {
       type: "digital",
       manualControl: "switches",
       switches: 3,
-      firingCone: "06",
     });
     setEditingKilnId(null);
   };
@@ -199,7 +193,7 @@ export default function AdminPage() {
   const handleKilnSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
-    if (!kilnForm.nickname || !kilnForm.type || !kilnForm.firingCone) {
+    if (!kilnForm.nickname || !kilnForm.type) {
       return;
     }
 
@@ -231,7 +225,6 @@ export default function AdminPage() {
       type: kiln.type,
       manualControl: kiln.manualControl ?? "switches",
       switches: kiln.switches ?? 3,
-      firingCone: kiln.firingCone,
     });
   };
 
@@ -381,57 +374,76 @@ export default function AdminPage() {
               <p className="text-sm font-semibold uppercase tracking-wide text-amber-700">Kilns</p>
               <h2 className="text-2xl font-bold text-gray-900">Add and manage kilns</h2>
               <p className="text-sm text-gray-600">
-                Capture kiln type, controls, and firing temperature using the cone chart.
+                Capture kiln type and controls, and reference the firing cone chart for temperatures.
               </p>
             </div>
           </div>
 
           <div className="overflow-hidden rounded-2xl border border-amber-100 bg-white shadow-sm">
-            <div className="grid grid-cols-6 bg-amber-50/60 px-4 py-3 text-xs font-semibold uppercase tracking-wide text-amber-800">
+            <div className="grid grid-cols-5 bg-amber-50/60 px-4 py-3 text-xs font-semibold uppercase tracking-wide text-amber-800">
               <span>Nickname</span>
               <span>Type</span>
               <span>Controls</span>
               <span>Switches</span>
-              <span>Firing Temp</span>
               <span className="text-right">Actions</span>
             </div>
             <ul className="divide-y divide-amber-100">
-              {kilns.map((kiln) => {
-                const cone = coneChart.find((entry) => entry.cone === kiln.firingCone);
-                return (
-                  <li
-                    key={kiln.id}
-                    className="grid grid-cols-6 items-center px-4 py-3 text-sm text-gray-800"
-                  >
-                    <span className="font-semibold">{kiln.nickname}</span>
-                    <span className="capitalize">{kiln.type}</span>
-                    <span className="text-sm text-gray-600">
-                      {kiln.type === "manual"
-                        ? kiln.manualControl === "switches"
-                          ? "Switches"
-                          : "Dial"
-                        : "Digital Panel"}
-                    </span>
-                    <span className="text-sm text-gray-600">
-                      {kiln.type === "manual" && kiln.manualControl === "switches"
-                        ? `${kiln.switches ?? 0} switches`
-                        : "—"}
-                    </span>
-                    <span className="font-mono text-xs text-gray-600">
-                      {cone ? `Cone ${cone.cone} · ${cone.temperatureF}°F` : `Cone ${kiln.firingCone}`}
-                    </span>
-                    <div className="flex justify-end gap-2">
-                      <button
-                        type="button"
-                        onClick={() => startKilnEdit(kiln)}
-                        className="rounded-full border border-amber-200 px-3 py-1 text-xs font-semibold text-amber-700 transition hover:bg-amber-50"
-                      >
-                        Edit
-                      </button>
-                    </div>
-                  </li>
-                );
-              })}
+              {kilns.map((kiln) => (
+                <li
+                  key={kiln.id}
+                  className="grid grid-cols-5 items-center px-4 py-3 text-sm text-gray-800"
+                >
+                  <span className="font-semibold">{kiln.nickname}</span>
+                  <span className="capitalize">{kiln.type}</span>
+                  <span className="text-sm text-gray-600">
+                    {kiln.type === "manual"
+                      ? kiln.manualControl === "switches"
+                        ? "Switches"
+                        : "Dial"
+                      : "Digital Panel"}
+                  </span>
+                  <span className="text-sm text-gray-600">
+                    {kiln.type === "manual" && kiln.manualControl === "switches"
+                      ? `${kiln.switches ?? 0} switches`
+                      : "—"}
+                  </span>
+                  <div className="flex justify-end gap-2">
+                    <button
+                      type="button"
+                      onClick={() => startKilnEdit(kiln)}
+                      className="rounded-full border border-amber-200 px-3 py-1 text-xs font-semibold text-amber-700 transition hover:bg-amber-50"
+                    >
+                      Edit
+                    </button>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          <div className="rounded-2xl border border-amber-100 bg-white shadow-sm">
+            <div className="flex items-center justify-between border-b border-amber-100 px-4 py-3">
+              <div>
+                <p className="text-sm font-semibold uppercase tracking-wide text-amber-700">
+                  Firing temperatures
+                </p>
+                <h3 className="text-lg font-bold text-gray-900">Cone reference chart</h3>
+                <p className="text-sm text-gray-600">
+                  Use this chart to look up cone numbers and their corresponding °F targets.
+                </p>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-px border-t border-amber-100 bg-amber-100 text-sm font-semibold uppercase tracking-wide text-amber-800">
+              <div className="bg-amber-50/60 px-4 py-3">Cone</div>
+              <div className="bg-amber-50/60 px-4 py-3 text-right">Temperature (°F)</div>
+            </div>
+            <ul className="divide-y divide-amber-100">
+              {coneChart.map((entry) => (
+                <li key={entry.cone} className="grid grid-cols-2 items-center px-4 py-2 text-sm text-gray-800">
+                  <span className="font-semibold">Cone {entry.cone}</span>
+                  <span className="text-right font-mono text-xs text-gray-600">{entry.temperatureF}°F</span>
+                </li>
+              ))}
             </ul>
           </div>
         </div>
@@ -440,11 +452,11 @@ export default function AdminPage() {
           <h3 className="text-lg font-semibold text-gray-900">
             {editingKilnId ? "Edit kiln" : "Add a new kiln"}
           </h3>
-          <p className="mt-1 text-sm text-gray-600">
-            {editingKilnId
-              ? "Update kiln controls, firing cone, or nickname."
-              : "Enter kiln details, including control style and target cone temperature."}
-          </p>
+            <p className="mt-1 text-sm text-gray-600">
+              {editingKilnId
+                ? "Update kiln controls or nickname."
+                : "Enter kiln details, including control style."}
+            </p>
 
           <form className="mt-4 space-y-4" onSubmit={handleKilnSubmit}>
             <div className="space-y-1">
@@ -567,26 +579,6 @@ export default function AdminPage() {
               </div>
             )}
 
-            <div className="space-y-1">
-              <label className="text-sm font-semibold text-gray-800" htmlFor="firingCone">
-                Firing temperature
-              </label>
-              <p className="text-xs text-gray-600">
-                Choose from the cone chart to preload the Fahrenheit temperature.
-              </p>
-              <select
-                id="firingCone"
-                name="firingCone"
-                value={kilnForm.firingCone}
-                onChange={(event) => setKilnForm((prev) => ({ ...prev, firingCone: event.target.value }))}
-                className="w-full rounded-xl border border-amber-200 bg-white px-3 py-2 text-sm shadow-inner focus:border-amber-400 focus:outline-none"
-              >
-                {coneChart.map((entry) => (
-                  <option key={entry.cone} value={entry.cone}>{`Cone ${entry.cone} — ${entry.temperatureF}°F`}</option>
-                ))}
-              </select>
-            </div>
-
             <div className="flex items-center gap-2 pt-2">
               <button
                 type="submit"
@@ -625,45 +617,80 @@ export default function AdminPage() {
         </div>
 
         <div className="overflow-hidden rounded-2xl border border-amber-100 bg-white shadow-sm">
-          <div className="grid grid-cols-4 bg-amber-50/60 px-4 py-3 text-xs font-semibold uppercase tracking-wide text-amber-800">
+          <div className="flex items-center justify-between border-b border-amber-100 px-4 py-3">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wide text-amber-700">Active colours</p>
+              <h3 className="text-lg font-bold text-gray-900">Current studio palette</h3>
+              <p className="text-sm text-gray-600">Retire colours to move them into the archive.</p>
+            </div>
+          </div>
+          <div className="grid grid-cols-3 bg-amber-50/60 px-4 py-3 text-xs font-semibold uppercase tracking-wide text-amber-800">
             <span>Colour Name</span>
             <span>Brand</span>
-            <span>Status</span>
             <span className="text-right">Actions</span>
           </div>
           <ul className="divide-y divide-amber-100">
-            {colors.map((color) => (
-              <li key={color.id} className="grid grid-cols-4 items-center px-4 py-3 text-sm text-gray-800">
+            {colors.filter((color) => !color.retired).map((color) => (
+              <li key={color.id} className="grid grid-cols-3 items-center px-4 py-3 text-sm text-gray-800">
                 <span className="font-semibold">{color.name}</span>
                 <span className="text-gray-700">{color.brand}</span>
-                <span className="text-xs font-semibold uppercase tracking-wide text-amber-700">
-                  {color.retired ? "Archived" : "Active"}
-                </span>
                 <div className="flex justify-end gap-2">
-                  {color.retired ? (
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setColors((prev) => prev.map((entry) => (entry.id === color.id ? { ...entry, retired: false } : entry)))
-                      }
-                      className="rounded-full border border-amber-200 px-3 py-1 text-xs font-semibold text-amber-700 transition hover:bg-amber-50"
-                    >
-                      Restore
-                    </button>
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setColors((prev) => prev.map((entry) => (entry.id === color.id ? { ...entry, retired: true } : entry)))
-                      }
-                      className="rounded-full border border-amber-200 px-3 py-1 text-xs font-semibold text-amber-700 transition hover:bg-amber-50"
-                    >
-                      Retire
-                    </button>
-                  )}
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setColors((prev) =>
+                        prev.map((entry) => (entry.id === color.id ? { ...entry, retired: true } : entry))
+                      )
+                    }
+                    className="rounded-full border border-amber-200 px-3 py-1 text-xs font-semibold text-amber-700 transition hover:bg-amber-50"
+                  >
+                    Retire
+                  </button>
                 </div>
               </li>
             ))}
+            {colors.filter((color) => !color.retired).length === 0 && (
+              <li className="px-4 py-6 text-sm text-gray-600">No active colours yet. Add one using the form.</li>
+            )}
+          </ul>
+        </div>
+
+        <div className="overflow-hidden rounded-2xl border border-amber-100 bg-white shadow-sm">
+          <div className="flex items-center justify-between border-b border-amber-100 px-4 py-3">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wide text-amber-700">Archived colours</p>
+              <h3 className="text-lg font-bold text-gray-900">Retired glaze library</h3>
+              <p className="text-sm text-gray-600">Restore colours to make them active again.</p>
+            </div>
+          </div>
+          <div className="grid grid-cols-3 bg-amber-50/60 px-4 py-3 text-xs font-semibold uppercase tracking-wide text-amber-800">
+            <span>Colour Name</span>
+            <span>Brand</span>
+            <span className="text-right">Actions</span>
+          </div>
+          <ul className="divide-y divide-amber-100">
+            {colors.filter((color) => color.retired).map((color) => (
+              <li key={color.id} className="grid grid-cols-3 items-center px-4 py-3 text-sm text-gray-800">
+                <span className="font-semibold">{color.name}</span>
+                <span className="text-gray-700">{color.brand}</span>
+                <div className="flex justify-end gap-2">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setColors((prev) =>
+                        prev.map((entry) => (entry.id === color.id ? { ...entry, retired: false } : entry))
+                      )
+                    }
+                    className="rounded-full border border-amber-200 px-3 py-1 text-xs font-semibold text-amber-700 transition hover:bg-amber-50"
+                  >
+                    Restore
+                  </button>
+                </div>
+              </li>
+            ))}
+            {colors.filter((color) => color.retired).length === 0 && (
+              <li className="px-4 py-6 text-sm text-gray-600">No archived colours yet.</li>
+            )}
           </ul>
         </div>
       </div>
@@ -741,7 +768,7 @@ export default function AdminPage() {
     {
       id: "kiln",
       label: "Kiln",
-      summary: "Add and manage kilns, controls, and firing cones.",
+      summary: "Add and manage kilns, controls, and reference firing cones.",
       content: kilnContent,
     },
     {
