@@ -12,9 +12,9 @@ const useCreateFiring = () => ({
 });
 
 const kilnOptions = [
-  { id: "k1", name: "Big Manual Kiln" },
-  { id: "k2", name: "Studio Test Kiln" },
-  { id: "k3", name: "Electric Kiln" },
+  { id: "k1", name: "Big Manual Kiln", model: "Skutt KM1227", location: "Studio North" },
+  { id: "k2", name: "Studio Test Kiln", model: "Manual Dial", location: "Studio Annex" },
+  { id: "k3", name: "Electric Kiln", model: "Olympic", location: "Studio Back" },
 ];
 
 const coneOptions = ["022", "018", "06", "05", "04", "03", "02", "01", "1", "2", "4", "5", "6", "8", "10"];
@@ -54,21 +54,46 @@ export default function NewFiringPage() {
 
   const persistOpenFiring = (payload: any) => {
     if (typeof window === "undefined") return;
+    const kiln = kilnOptions.find((k) => k.id === form.kilnId);
     const existing = window.localStorage.getItem("kiln-open-firings");
     const parsed = existing ? JSON.parse(existing) : [];
+    const detailStoreRaw = window.localStorage.getItem("kiln-open-firing-details");
+    const detailsStore = detailStoreRaw ? JSON.parse(detailStoreRaw) : {};
+
+    const openFiringEntry = {
+      id: payload.id,
+      kilnName: kiln?.name ?? "Unknown kiln",
+      status: "Started",
+      targetCone: payload.target_cone,
+      targetTemp: payload.target_temp,
+      startedAt: payload.start_time,
+    };
+
+    const firingDetail = {
+      id: payload.id,
+      kilnName: kiln?.name ?? "Unknown kiln",
+      kilnModel: kiln?.model ?? "Manual kiln",
+      location: kiln?.location ?? "Studio",
+      firingType: form.firingType,
+      status: "open",
+      targetCone: payload.target_cone,
+      targetTemp: payload.target_temp ?? undefined,
+      startTime: payload.start_time,
+      loadPhotos: form.loadPhotos.map((file) => file.name),
+      notes: form.notes || undefined,
+    };
+
     window.localStorage.setItem(
       "kiln-open-firings",
-      JSON.stringify([
-        ...parsed,
-        {
-          id: payload.id,
-          kilnName: kilnOptions.find((k) => k.id === form.kilnId)?.name ?? "Unknown kiln",
-          status: "Started",
-          targetCone: payload.target_cone,
-          targetTemp: payload.target_temp ?? 0,
-          startedAt: payload.start_time,
-        },
-      ]),
+      JSON.stringify([...parsed, openFiringEntry]),
+    );
+
+    window.localStorage.setItem(
+      "kiln-open-firing-details",
+      JSON.stringify({
+        ...detailsStore,
+        [payload.id]: firingDetail,
+      }),
     );
   };
 

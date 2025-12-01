@@ -8,18 +8,29 @@ type OpenFiring = {
   kilnName: string;
   status: string;
   targetCone: string;
-  targetTemp: number;
+  targetTemp?: number;
   startedAt: string;
+};
+
+type LoadedPiece = {
+  name: string;
+  notes?: string;
 };
 
 type FiringHistoryRow = {
   id: string;
   date: string;
   kiln: string;
+  kilnModel?: string;
+  location?: string;
+  firingType?: string;
   targetCone: string;
-  targetTemp: number;
+  targetTemp?: number;
   tempReached?: number;
   status: string;
+  loadPhotos?: string[];
+  pieces?: LoadedPiece[];
+  endTime?: string;
 };
 
 const defaultOpenFirings: OpenFiring[] = [
@@ -46,28 +57,54 @@ const defaultHistory: FiringHistoryRow[] = [
     id: "11",
     date: "2024-05-25T12:00:00Z",
     kiln: "Big Manual Kiln",
+    kilnModel: "Skutt KM1227",
+    location: "Studio North",
+    firingType: "glaze",
     targetCone: "6",
     targetTemp: 2232,
     tempReached: 2225,
     status: "Completed",
+    endTime: "2024-05-25T22:10:00Z",
+    loadPhotos: ["load-front.jpg", "load-side.jpg"],
+    pieces: [
+      { name: "Mugs (8)", notes: "Shino outside" },
+      { name: "Dinner plates (4)", notes: "Celadon" },
+    ],
   },
   {
     id: "12",
     date: "2024-05-10T14:30:00Z",
     kiln: "Small Electric Kiln",
+    kilnModel: "Olympic 1823E",
+    location: "Studio Annex",
+    firingType: "bisque",
     targetCone: "04",
     targetTemp: 1940,
     tempReached: 1935,
     status: "Completed",
+    endTime: "2024-05-10T21:45:00Z",
+    loadPhotos: ["test-bisque.jpg"],
+    pieces: [
+      { name: "Test tiles (12)" },
+      { name: "Cups (6)", notes: "Handle stress test" },
+    ],
   },
   {
     id: "13",
     date: "2024-04-28T10:45:00Z",
     kiln: "Test Kiln",
+    kilnModel: "Manual Dial Kiln",
+    location: "Studio Backroom",
+    firingType: "glaze",
     targetCone: "06",
     targetTemp: 1830,
     tempReached: 1810,
     status: "Aborted",
+    endTime: "2024-04-28T13:20:00Z",
+    pieces: [
+      { name: "Bowls (3)" },
+      { name: "Tiles (5)", notes: "Ran cold; glaze pinholes" },
+    ],
   },
 ];
 
@@ -81,20 +118,24 @@ export default function KilnDashboardPage() {
     const open = window.localStorage.getItem("kiln-open-firings");
     const history = window.localStorage.getItem("kiln-firing-history");
 
-    if (open) {
-      try {
+    try {
+      if (open) {
         setOpenFirings(JSON.parse(open));
-      } catch (error) {
-        console.error("Unable to parse open firings", error);
+      } else {
+        window.localStorage.setItem("kiln-open-firings", JSON.stringify(defaultOpenFirings));
       }
+    } catch (error) {
+      console.error("Unable to parse open firings", error);
     }
 
-    if (history) {
-      try {
+    try {
+      if (history) {
         setFiringHistory(JSON.parse(history));
-      } catch (error) {
-        console.error("Unable to parse firing history", error);
+      } else {
+        window.localStorage.setItem("kiln-firing-history", JSON.stringify(defaultHistory));
       }
+    } catch (error) {
+      console.error("Unable to parse firing history", error);
     }
   }, []);
 
@@ -142,7 +183,9 @@ export default function KilnDashboardPage() {
                 <div className="space-y-1">
                   <p className="text-sm font-semibold text-amber-700">{firing.kilnName}</p>
                   <h3 className="text-lg font-bold text-gray-900">Cone {firing.targetCone}</h3>
-                  <p className="text-sm text-gray-700">Target {firing.targetTemp}°F</p>
+                  <p className="text-sm text-gray-700">
+                    Target {firing.targetTemp ? `${firing.targetTemp}°F` : "—"}
+                  </p>
                   <p className="text-xs text-gray-500">
                     Started {new Date(firing.startedAt).toLocaleString()}
                   </p>
@@ -197,8 +240,12 @@ export default function KilnDashboardPage() {
                     </td>
                     <td className="px-6 py-4 text-sm text-gray-700">{firing.kiln}</td>
                     <td className="px-6 py-4 text-sm text-gray-700">Cone {firing.targetCone}</td>
-                    <td className="px-6 py-4 text-sm text-gray-700">{firing.targetTemp}°F</td>
-                    <td className="px-6 py-4 text-sm text-gray-700">{firing.tempReached}°F</td>
+                    <td className="px-6 py-4 text-sm text-gray-700">
+                      {firing.targetTemp ? `${firing.targetTemp}°F` : "—"}
+                    </td>
+                    <td className="px-6 py-4 text-sm text-gray-700">
+                      {firing.tempReached ? `${firing.tempReached}°F` : "—"}
+                    </td>
                     <td className="px-6 py-4 text-right">
                       <Link
                         href={`/firings/${firing.id}`}
