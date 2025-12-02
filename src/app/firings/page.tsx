@@ -44,20 +44,12 @@ export default function FiringsPage() {
             Filter and browse firing history.
           </p>
         </div>
-        <div className="flex items-center gap-3">
-          <Link
-            href="/projects"
-            className="px-3 py-2 rounded border border-amber-200 text-amber-800 bg-amber-50 hover:bg-amber-100"
-          >
-            Go to Pottery Tracker
-          </Link>
-          <Link
-            href="/firings/new"
-            className="px-3 py-2 bg-blue-600 text-white rounded"
-          >
-            New Firing
-          </Link>
-        </div>
+        <Link
+          href="/firings/new"
+          className="px-3 py-2 bg-blue-600 text-white rounded"
+        >
+          New Firing
+        </Link>
       </header>
 
       <section className="grid grid-cols-2 gap-4">
