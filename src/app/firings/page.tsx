@@ -2,6 +2,7 @@
 
 import React, { useMemo, useState } from "react";
 import Link from "next/link";
+import { FiringFormModal } from "./components/FiringFormModal";
 
 // TODO: replace with real tRPC hooks, e.g., useFiringHistory(filters)
 const mockFirings = [
@@ -27,6 +28,7 @@ type Filters = {
 
 export default function FiringsPage() {
   const [filters, setFilters] = useState<Filters>({});
+  const [showCreate, setShowCreate] = useState(false);
 
   // TODO: replace with data from useFiringHistory(filters)
   const filteredFirings = useMemo(() => mockFirings, []);
@@ -44,12 +46,12 @@ export default function FiringsPage() {
             Filter and browse firing history.
           </p>
         </div>
-        <Link
-          href="/firings/new"
-          className="px-3 py-2 bg-blue-600 text-white rounded"
+        <button
+          onClick={() => setShowCreate(true)}
+          className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-blue-200 transition hover:-translate-y-0.5 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-400"
         >
           New Firing
-        </Link>
+        </button>
       </header>
 
       <section className="grid grid-cols-2 gap-4">
@@ -138,6 +140,8 @@ export default function FiringsPage() {
           </Link>
         ))}
       </section>
+
+      <FiringFormModal open={showCreate} onClose={() => setShowCreate(false)} />
     </main>
   );
 }
