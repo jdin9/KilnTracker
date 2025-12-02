@@ -140,11 +140,11 @@ export default function KilnDashboardPage() {
   }, []);
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-amber-50 via-white to-orange-100 pb-12">
+    <main className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-indigo-100 pb-12">
       <div className="mx-auto max-w-6xl px-6 py-10 space-y-10">
         <header className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <p className="text-sm font-semibold uppercase tracking-wide text-amber-700">
+            <p className="text-sm font-semibold uppercase tracking-wide text-purple-700">
               Kiln Tracker
             </p>
             <h1 className="text-4xl font-bold text-gray-900">Firing dashboard</h1>
@@ -154,13 +154,13 @@ export default function KilnDashboardPage() {
           </div>
           <Link
             href="/firings/new"
-            className="inline-flex items-center gap-2 rounded-full bg-amber-600 px-4 py-2 text-sm font-semibold text-white shadow-md transition hover:bg-amber-700"
+            className="inline-flex items-center gap-2 rounded-full bg-purple-600 px-4 py-2 text-sm font-semibold text-white shadow-md transition hover:bg-purple-700"
           >
             Start new firing
           </Link>
         </header>
 
-        <section className="grid gap-4 rounded-3xl bg-white/90 p-6 shadow-lg ring-1 ring-amber-100">
+        <section className="grid gap-4 rounded-3xl bg-white/90 p-6 shadow-lg ring-1 ring-purple-100">
           <div className="flex items-center justify-between">
             <div>
               <h2 className="text-xl font-semibold text-gray-900">Open firings</h2>
@@ -168,7 +168,7 @@ export default function KilnDashboardPage() {
             </div>
             <Link
               href="/firings"
-              className="text-sm font-semibold text-amber-700 underline-offset-4 hover:underline"
+              className="text-sm font-semibold text-purple-700 underline-offset-4 hover:underline"
             >
               View all firings
             </Link>
@@ -178,10 +178,10 @@ export default function KilnDashboardPage() {
               <Link
                 key={firing.id}
                 href={`/firings/${firing.id}`}
-                className="group flex items-center justify-between rounded-2xl border border-amber-100 bg-gradient-to-br from-amber-50 to-white p-4 shadow-sm transition hover:-translate-y-1 hover:shadow-md"
+                className="group flex items-center justify-between rounded-2xl border border-purple-100 bg-gradient-to-br from-purple-50 to-white p-4 shadow-sm transition hover:-translate-y-1 hover:shadow-md"
               >
                 <div className="space-y-1">
-                  <p className="text-sm font-semibold text-amber-700">{firing.kilnName}</p>
+                  <p className="text-sm font-semibold text-purple-700">{firing.kilnName}</p>
                   <h3 className="text-lg font-bold text-gray-900">Cone {firing.targetCone}</h3>
                   <p className="text-sm text-gray-700">
                     Target {firing.targetTemp ? `${firing.targetTemp}°F` : "—"}
@@ -190,13 +190,13 @@ export default function KilnDashboardPage() {
                     Started {new Date(firing.startedAt).toLocaleString()}
                   </p>
                 </div>
-                <div className="flex h-16 w-16 items-center justify-center rounded-full bg-amber-100 text-sm font-semibold text-amber-800 ring-2 ring-amber-200">
+                <div className="flex h-16 w-16 items-center justify-center rounded-full bg-purple-100 text-sm font-semibold text-purple-800 ring-2 ring-purple-200">
                   {firing.status}
                 </div>
               </Link>
             ))}
             {openFirings.length === 0 && (
-              <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-amber-200 bg-amber-50/60 p-6 text-center text-sm text-gray-600">
+              <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-purple-200 bg-purple-50/60 p-6 text-center text-sm text-gray-600">
                 No open firings right now. Start one to begin logging.
               </div>
             )}
@@ -210,31 +210,31 @@ export default function KilnDashboardPage() {
               <p className="text-sm text-gray-600">Click into any firing to review logs, photos, and pieces.</p>
             </div>
           </div>
-          <div className="overflow-hidden rounded-3xl bg-white/90 shadow-lg ring-1 ring-amber-100">
-            <table className="min-w-full divide-y divide-amber-100">
-              <thead className="bg-amber-50/60">
+          <div className="overflow-hidden rounded-3xl bg-white/90 shadow-lg ring-1 ring-purple-100">
+            <table className="min-w-full divide-y divide-purple-100">
+              <thead className="bg-purple-50/60">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wide text-amber-800">
+                  <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wide text-purple-800">
                     Date
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wide text-amber-800">
+                  <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wide text-purple-800">
                     Kiln
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wide text-amber-800">
+                  <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wide text-purple-800">
                     Target Cone
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wide text-amber-800">
+                  <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wide text-purple-800">
                     Target Temp
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wide text-amber-800">
+                  <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wide text-purple-800">
                     Temp Reached
                   </th>
                   <th className="px-6 py-3" />
                 </tr>
               </thead>
-              <tbody className="divide-y divide-amber-50/70">
+              <tbody className="divide-y divide-purple-50/70">
                 {firingHistory.map((firing) => (
-                  <tr key={firing.id} className="hover:bg-amber-50/60">
+                  <tr key={firing.id} className="hover:bg-purple-50/60">
                     <td className="px-6 py-4 text-sm font-medium text-gray-900">
                       {new Date(firing.date).toLocaleDateString()}
                     </td>
@@ -249,7 +249,7 @@ export default function KilnDashboardPage() {
                     <td className="px-6 py-4 text-right">
                       <Link
                         href={`/firings/${firing.id}`}
-                        className="text-sm font-semibold text-amber-700 underline-offset-4 hover:underline"
+                        className="text-sm font-semibold text-purple-700 underline-offset-4 hover:underline"
                       >
                         View details
                       </Link>
