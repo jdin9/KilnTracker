@@ -34,6 +34,7 @@ type Kiln = {
   type: KilnType;
   manualControl?: ManualControl;
   switches?: number;
+  dialPositions?: string[];
 };
 
 const initialUsers: User[] = [
@@ -113,6 +114,7 @@ const initialKilns: Kiln[] = [
     nickname: "Glaze Trials",
     type: "manual",
     manualControl: "dial",
+    dialPositions: ["Low", "Medium", "High"],
   },
 ];
 
@@ -138,6 +140,7 @@ export default function AdminPage() {
     type: "digital",
     manualControl: "switches",
     switches: 3,
+    dialPositions: [""],
   });
   const [editingKilnId, setEditingKilnId] = useState<number | null>(null);
   const [colors, setColors] = useState<StudioColor[]>(initialColors);
@@ -186,6 +189,7 @@ export default function AdminPage() {
       type: "digital",
       manualControl: "switches",
       switches: 3,
+      dialPositions: [""],
     });
     setEditingKilnId(null);
   };
@@ -203,6 +207,10 @@ export default function AdminPage() {
       switches:
         kilnForm.type === "manual" && kilnForm.manualControl === "switches"
           ? kilnForm.switches
+          : undefined,
+      dialPositions:
+        kilnForm.type === "manual" && kilnForm.manualControl === "dial"
+          ? (kilnForm.dialPositions ?? []).filter((position) => position.trim().length > 0)
           : undefined,
     };
 
@@ -225,6 +233,7 @@ export default function AdminPage() {
       type: kiln.type,
       manualControl: kiln.manualControl ?? "switches",
       switches: kiln.switches ?? 3,
+      dialPositions: kiln.dialPositions?.length ? kiln.dialPositions : [""],
     });
   };
 
@@ -380,18 +389,19 @@ export default function AdminPage() {
           </div>
 
           <div className="overflow-hidden rounded-2xl border border-purple-100 bg-white shadow-sm">
-            <div className="grid grid-cols-5 bg-purple-50/60 px-4 py-3 text-xs font-semibold uppercase tracking-wide text-purple-800">
+            <div className="grid grid-cols-6 bg-purple-50/60 px-4 py-3 text-xs font-semibold uppercase tracking-wide text-purple-800">
               <span>Nickname</span>
               <span>Type</span>
               <span>Controls</span>
               <span>Switches</span>
+              <span>Dial positions</span>
               <span className="text-right">Actions</span>
             </div>
             <ul className="divide-y divide-purple-100">
               {kilns.map((kiln) => (
                 <li
                   key={kiln.id}
-                  className="grid grid-cols-5 items-center px-4 py-3 text-sm text-gray-800"
+                  className="grid grid-cols-6 items-center px-4 py-3 text-sm text-gray-800"
                 >
                   <span className="font-semibold">{kiln.nickname}</span>
                   <span className="capitalize">{kiln.type}</span>
@@ -407,6 +417,18 @@ export default function AdminPage() {
                       ? `${kiln.switches ?? 0} switches`
                       : "—"}
                   </span>
+                  <div className="flex flex-wrap gap-1 text-xs text-gray-700">
+                    {kiln.type === "manual" && kiln.manualControl === "dial" && kiln.dialPositions?.length
+                      ? kiln.dialPositions.map((position, index) => (
+                          <span
+                            key={`${kiln.id}-position-${index}`}
+                            className="rounded-full bg-purple-50 px-2 py-0.5 font-semibold text-purple-800 ring-1 ring-purple-100"
+                          >
+                            {position}
+                          </span>
+                        ))
+                      : "—"}
+                  </div>
                   <div className="flex justify-end gap-2">
                     <button
                       type="button"
@@ -493,6 +515,12 @@ export default function AdminPage() {
                             type === "manual" && prev.manualControl === "switches"
                               ? prev.switches ?? 3
                               : undefined,
+                          dialPositions:
+                            type === "manual" && prev.manualControl === "dial"
+                              ? prev.dialPositions?.length
+                                ? prev.dialPositions
+                                : [""]
+                              : undefined,
                         }))
                       }
                       className={`rounded-2xl border px-4 py-3 text-left text-sm font-semibold transition ${
@@ -536,6 +564,12 @@ export default function AdminPage() {
                               ...prev,
                               manualControl: control as ManualControl,
                               switches: control === "switches" ? prev.switches ?? 3 : undefined,
+                              dialPositions:
+                                control === "dial"
+                                  ? prev.dialPositions?.length
+                                    ? prev.dialPositions
+                                    : [""]
+                                  : undefined,
                             }))
                           }
                           className={`rounded-xl border px-3 py-2 text-left text-sm font-semibold transition ${
@@ -574,6 +608,63 @@ export default function AdminPage() {
                       }
                       className="w-full rounded-xl border border-purple-200 bg-white px-3 py-2 text-sm shadow-inner focus:border-purple-400 focus:outline-none"
                     />
+                  </div>
+                )}
+
+                {kilnForm.manualControl === "dial" && (
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <label className="text-sm font-semibold text-gray-800" htmlFor="dial-positions">
+                        Dial positions
+                      </label>
+                      <span className="text-xs text-gray-600">Add short labels in order</span>
+                    </div>
+                    <div className="space-y-2">
+                      {(kilnForm.dialPositions ?? [""]).map((position, index) => (
+                        <div key={index} className="flex gap-2">
+                          <input
+                            id={index === 0 ? "dial-positions" : undefined}
+                            value={position}
+                            onChange={(event) =>
+                              setKilnForm((prev) => ({
+                                ...prev,
+                                dialPositions: (prev.dialPositions ?? [""]).map((entry, i) =>
+                                  i === index ? event.target.value : entry
+                                ),
+                              }))
+                            }
+                            placeholder="e.g. Low"
+                            className="w-full rounded-xl border border-purple-200 bg-white px-3 py-2 text-sm shadow-inner focus:border-purple-400 focus:outline-none"
+                          />
+                          {kilnForm.dialPositions && kilnForm.dialPositions.length > 1 && (
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setKilnForm((prev) => ({
+                                  ...prev,
+                                  dialPositions: (prev.dialPositions ?? []).filter((_, i) => i !== index),
+                                }))
+                              }
+                              className="rounded-xl border border-red-100 bg-red-50 px-3 py-2 text-sm font-semibold text-red-700 transition hover:bg-red-100"
+                            >
+                              Remove
+                            </button>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setKilnForm((prev) => ({
+                          ...prev,
+                          dialPositions: [...(prev.dialPositions ?? []), ""],
+                        }))
+                      }
+                      className="w-full rounded-xl border border-dashed border-purple-300 bg-white px-3 py-2 text-sm font-semibold text-purple-700 transition hover:bg-purple-50"
+                    >
+                      + Add dial position
+                    </button>
                   </div>
                 )}
               </div>
