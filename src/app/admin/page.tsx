@@ -234,7 +234,7 @@ export default function AdminPage() {
         <div className="lg:col-span-2 space-y-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-semibold uppercase tracking-wide text-amber-700">
+              <p className="text-sm font-semibold uppercase tracking-wide text-purple-700">
                 Users
               </p>
               <h2 className="text-2xl font-bold text-gray-900">Manage site accounts</h2>
@@ -244,15 +244,15 @@ export default function AdminPage() {
             </div>
           </div>
 
-          <div className="overflow-hidden rounded-2xl border border-amber-100 bg-white shadow-sm">
-            <div className="grid grid-cols-5 bg-amber-50/60 px-4 py-3 text-xs font-semibold uppercase tracking-wide text-amber-800">
+          <div className="overflow-hidden rounded-2xl border border-purple-100 bg-white shadow-sm">
+            <div className="grid grid-cols-5 bg-purple-50/60 px-4 py-3 text-xs font-semibold uppercase tracking-wide text-purple-800">
               <span>First Name</span>
               <span>Last Name</span>
               <span>Username</span>
               <span>Password</span>
               <span className="text-right">Actions</span>
             </div>
-            <ul className="divide-y divide-amber-100">
+            <ul className="divide-y divide-purple-100">
               {users.map((user) => (
                 <li key={user.id} className="grid grid-cols-5 items-center px-4 py-3 text-sm text-gray-800">
                   <span className="font-semibold">{user.firstName}</span>
@@ -263,7 +263,7 @@ export default function AdminPage() {
                     <button
                       type="button"
                       onClick={() => startEdit(user)}
-                      className="rounded-full border border-amber-200 px-3 py-1 text-xs font-semibold text-amber-700 transition hover:bg-amber-50"
+                      className="rounded-full border border-purple-200 px-3 py-1 text-xs font-semibold text-purple-700 transition hover:bg-purple-50"
                     >
                       Edit
                     </button>
@@ -274,7 +274,7 @@ export default function AdminPage() {
           </div>
         </div>
 
-        <div className="rounded-3xl border border-amber-100 bg-amber-50 p-6 shadow-inner">
+        <div className="rounded-3xl border border-purple-100 bg-purple-50 p-6 shadow-inner">
           <h3 className="text-lg font-semibold text-gray-900">
             {editingId ? "Edit user" : "Add a new user"}
           </h3>
@@ -293,7 +293,7 @@ export default function AdminPage() {
                 name="firstName"
                 value={form.firstName}
                 onChange={(event) => setForm((prev) => ({ ...prev, firstName: event.target.value }))}
-                className="w-full rounded-xl border border-amber-200 bg-white px-3 py-2 text-sm shadow-inner focus:border-amber-400 focus:outline-none"
+                className="w-full rounded-xl border border-purple-200 bg-white px-3 py-2 text-sm shadow-inner focus:border-purple-400 focus:outline-none"
                 placeholder="Jordan"
                 required
               />
@@ -307,7 +307,7 @@ export default function AdminPage() {
                 name="lastName"
                 value={form.lastName}
                 onChange={(event) => setForm((prev) => ({ ...prev, lastName: event.target.value }))}
-                className="w-full rounded-xl border border-amber-200 bg-white px-3 py-2 text-sm shadow-inner focus:border-amber-400 focus:outline-none"
+                className="w-full rounded-xl border border-purple-200 bg-white px-3 py-2 text-sm shadow-inner focus:border-purple-400 focus:outline-none"
                 placeholder="Patel"
                 required
               />
@@ -321,7 +321,7 @@ export default function AdminPage() {
                 name="username"
                 value={form.username}
                 onChange={(event) => setForm((prev) => ({ ...prev, username: event.target.value }))}
-                className="w-full rounded-xl border border-amber-200 bg-white px-3 py-2 text-sm shadow-inner focus:border-amber-400 focus:outline-none"
+                className="w-full rounded-xl border border-purple-200 bg-white px-3 py-2 text-sm shadow-inner focus:border-purple-400 focus:outline-none"
                 placeholder="jpatel"
                 required
               />
@@ -336,7 +336,7 @@ export default function AdminPage() {
                 type="text"
                 value={form.password}
                 onChange={(event) => setForm((prev) => ({ ...prev, password: event.target.value }))}
-                className="w-full rounded-xl border border-amber-200 bg-white px-3 py-2 text-sm shadow-inner focus:border-amber-400 focus:outline-none"
+                className="w-full rounded-xl border border-purple-200 bg-white px-3 py-2 text-sm shadow-inner focus:border-purple-400 focus:outline-none"
                 placeholder="Set a secure password"
                 required
               />
@@ -344,7 +344,7 @@ export default function AdminPage() {
             <div className="flex items-center gap-2 pt-2">
               <button
                 type="submit"
-                className="flex-1 rounded-full bg-amber-600 px-4 py-2 text-sm font-semibold text-white shadow-md transition hover:bg-amber-700"
+                className="flex-1 rounded-full bg-purple-600 px-4 py-2 text-sm font-semibold text-white shadow-md transition hover:bg-purple-700"
               >
                 {editingId ? "Save changes" : "Add user"}
               </button>
@@ -352,7 +352,7 @@ export default function AdminPage() {
                 <button
                   type="button"
                   onClick={resetForm}
-                  className="rounded-full border border-amber-200 px-4 py-2 text-sm font-semibold text-amber-700 transition hover:bg-amber-50"
+                  className="rounded-full border border-purple-200 px-4 py-2 text-sm font-semibold text-purple-700 transition hover:bg-purple-50"
                 >
                   Cancel
                 </button>
@@ -371,7 +371,7 @@ export default function AdminPage() {
         <div className="xl:col-span-2 space-y-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-semibold uppercase tracking-wide text-amber-700">Kilns</p>
+              <p className="text-sm font-semibold uppercase tracking-wide text-purple-700">Kilns</p>
               <h2 className="text-2xl font-bold text-gray-900">Add and manage kilns</h2>
               <p className="text-sm text-gray-600">
                 Capture kiln type and controls, and reference the firing cone chart for temperatures.
@@ -379,15 +379,15 @@ export default function AdminPage() {
             </div>
           </div>
 
-          <div className="overflow-hidden rounded-2xl border border-amber-100 bg-white shadow-sm">
-            <div className="grid grid-cols-5 bg-amber-50/60 px-4 py-3 text-xs font-semibold uppercase tracking-wide text-amber-800">
+          <div className="overflow-hidden rounded-2xl border border-purple-100 bg-white shadow-sm">
+            <div className="grid grid-cols-5 bg-purple-50/60 px-4 py-3 text-xs font-semibold uppercase tracking-wide text-purple-800">
               <span>Nickname</span>
               <span>Type</span>
               <span>Controls</span>
               <span>Switches</span>
               <span className="text-right">Actions</span>
             </div>
-            <ul className="divide-y divide-amber-100">
+            <ul className="divide-y divide-purple-100">
               {kilns.map((kiln) => (
                 <li
                   key={kiln.id}
@@ -411,7 +411,7 @@ export default function AdminPage() {
                     <button
                       type="button"
                       onClick={() => startKilnEdit(kiln)}
-                      className="rounded-full border border-amber-200 px-3 py-1 text-xs font-semibold text-amber-700 transition hover:bg-amber-50"
+                      className="rounded-full border border-purple-200 px-3 py-1 text-xs font-semibold text-purple-700 transition hover:bg-purple-50"
                     >
                       Edit
                     </button>
@@ -421,10 +421,10 @@ export default function AdminPage() {
             </ul>
           </div>
 
-          <div className="rounded-2xl border border-amber-100 bg-white shadow-sm">
-            <div className="flex items-center justify-between border-b border-amber-100 px-4 py-3">
+          <div className="rounded-2xl border border-purple-100 bg-white shadow-sm">
+            <div className="flex items-center justify-between border-b border-purple-100 px-4 py-3">
               <div>
-                <p className="text-sm font-semibold uppercase tracking-wide text-amber-700">
+                <p className="text-sm font-semibold uppercase tracking-wide text-purple-700">
                   Firing temperatures
                 </p>
                 <h3 className="text-lg font-bold text-gray-900">Cone reference chart</h3>
@@ -433,11 +433,11 @@ export default function AdminPage() {
                 </p>
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-px border-t border-amber-100 bg-amber-100 text-sm font-semibold uppercase tracking-wide text-amber-800">
-              <div className="bg-amber-50/60 px-4 py-3">Cone</div>
-              <div className="bg-amber-50/60 px-4 py-3 text-right">Temperature (°F)</div>
+            <div className="grid grid-cols-2 gap-px border-t border-purple-100 bg-purple-100 text-sm font-semibold uppercase tracking-wide text-purple-800">
+              <div className="bg-purple-50/60 px-4 py-3">Cone</div>
+              <div className="bg-purple-50/60 px-4 py-3 text-right">Temperature (°F)</div>
             </div>
-            <ul className="divide-y divide-amber-100">
+            <ul className="divide-y divide-purple-100">
               {coneChart.map((entry) => (
                 <li key={entry.cone} className="grid grid-cols-2 items-center px-4 py-2 text-sm text-gray-800">
                   <span className="font-semibold">Cone {entry.cone}</span>
@@ -448,7 +448,7 @@ export default function AdminPage() {
           </div>
         </div>
 
-        <div className="rounded-3xl border border-amber-100 bg-amber-50 p-6 shadow-inner">
+        <div className="rounded-3xl border border-purple-100 bg-purple-50 p-6 shadow-inner">
           <h3 className="text-lg font-semibold text-gray-900">
             {editingKilnId ? "Edit kiln" : "Add a new kiln"}
           </h3>
@@ -468,7 +468,7 @@ export default function AdminPage() {
                 name="nickname"
                 value={kilnForm.nickname}
                 onChange={(event) => setKilnForm((prev) => ({ ...prev, nickname: event.target.value }))}
-                className="w-full rounded-xl border border-amber-200 bg-white px-3 py-2 text-sm shadow-inner focus:border-amber-400 focus:outline-none"
+                className="w-full rounded-xl border border-purple-200 bg-white px-3 py-2 text-sm shadow-inner focus:border-purple-400 focus:outline-none"
                 placeholder="Front Room Kiln"
                 required
               />
@@ -497,14 +497,14 @@ export default function AdminPage() {
                       }
                       className={`rounded-2xl border px-4 py-3 text-left text-sm font-semibold transition ${
                         isActive
-                          ? "border-amber-200 bg-amber-600 text-white shadow-lg"
-                          : "border-amber-100 bg-white text-gray-800 hover:border-amber-200 hover:bg-amber-50"
+                          ? "border-purple-200 bg-purple-600 text-white shadow-lg"
+                          : "border-purple-100 bg-white text-gray-800 hover:border-purple-200 hover:bg-purple-50"
                       }`}
                     >
                       {label}
                       <span
                         className={`mt-1 block text-xs ${
-                          isActive ? "text-amber-50/90" : "text-gray-500"
+                          isActive ? "text-purple-50/90" : "text-gray-500"
                         }`}
                       >
                         {type === "digital"
@@ -518,7 +518,7 @@ export default function AdminPage() {
             </div>
 
             {kilnForm.type === "manual" && (
-              <div className="space-y-2 rounded-2xl bg-white/70 p-4 ring-1 ring-amber-100">
+              <div className="space-y-2 rounded-2xl bg-white/70 p-4 ring-1 ring-purple-100">
                 <div className="space-y-1">
                   <label className="text-sm font-semibold text-gray-800" htmlFor="control-style">
                     Manual control style
@@ -540,8 +540,8 @@ export default function AdminPage() {
                           }
                           className={`rounded-xl border px-3 py-2 text-left text-sm font-semibold transition ${
                             isActive
-                              ? "border-amber-200 bg-amber-100 text-amber-900"
-                              : "border-amber-100 bg-white text-gray-800 hover:border-amber-200"
+                              ? "border-purple-200 bg-purple-100 text-purple-900"
+                              : "border-purple-100 bg-white text-gray-800 hover:border-purple-200"
                           }`}
                         >
                           {label}
@@ -572,7 +572,7 @@ export default function AdminPage() {
                           switches: Number(event.target.value) || 1,
                         }))
                       }
-                      className="w-full rounded-xl border border-amber-200 bg-white px-3 py-2 text-sm shadow-inner focus:border-amber-400 focus:outline-none"
+                      className="w-full rounded-xl border border-purple-200 bg-white px-3 py-2 text-sm shadow-inner focus:border-purple-400 focus:outline-none"
                     />
                   </div>
                 )}
@@ -582,7 +582,7 @@ export default function AdminPage() {
             <div className="flex items-center gap-2 pt-2">
               <button
                 type="submit"
-                className="flex-1 rounded-full bg-amber-600 px-4 py-2 text-sm font-semibold text-white shadow-md transition hover:bg-amber-700"
+                className="flex-1 rounded-full bg-purple-600 px-4 py-2 text-sm font-semibold text-white shadow-md transition hover:bg-purple-700"
               >
                 {editingKilnId ? "Save kiln" : "Add kiln"}
               </button>
@@ -590,7 +590,7 @@ export default function AdminPage() {
                 <button
                   type="button"
                   onClick={resetKilnForm}
-                  className="rounded-full border border-amber-200 px-4 py-2 text-sm font-semibold text-amber-700 transition hover:bg-amber-50"
+                  className="rounded-full border border-purple-200 px-4 py-2 text-sm font-semibold text-purple-700 transition hover:bg-purple-50"
                 >
                   Cancel
                 </button>
@@ -608,7 +608,7 @@ export default function AdminPage() {
       <div className="xl:col-span-2 space-y-4">
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-sm font-semibold uppercase tracking-wide text-amber-700">Colors</p>
+            <p className="text-sm font-semibold uppercase tracking-wide text-purple-700">Colors</p>
             <h2 className="text-2xl font-bold text-gray-900">Studio glaze colors</h2>
             <p className="text-sm text-gray-600">
               Track which colors are active in the studio, add new glazes, or retire them to the archive.
@@ -616,20 +616,20 @@ export default function AdminPage() {
           </div>
         </div>
 
-        <div className="overflow-hidden rounded-2xl border border-amber-100 bg-white shadow-sm">
-          <div className="flex items-center justify-between border-b border-amber-100 px-4 py-3">
+        <div className="overflow-hidden rounded-2xl border border-purple-100 bg-white shadow-sm">
+          <div className="flex items-center justify-between border-b border-purple-100 px-4 py-3">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-wide text-amber-700">Active colours</p>
+              <p className="text-xs font-semibold uppercase tracking-wide text-purple-700">Active colours</p>
               <h3 className="text-lg font-bold text-gray-900">Current studio palette</h3>
               <p className="text-sm text-gray-600">Retire colours to move them into the archive.</p>
             </div>
           </div>
-          <div className="grid grid-cols-3 bg-amber-50/60 px-4 py-3 text-xs font-semibold uppercase tracking-wide text-amber-800">
+          <div className="grid grid-cols-3 bg-purple-50/60 px-4 py-3 text-xs font-semibold uppercase tracking-wide text-purple-800">
             <span>Colour Name</span>
             <span>Brand</span>
             <span className="text-right">Actions</span>
           </div>
-          <ul className="divide-y divide-amber-100">
+          <ul className="divide-y divide-purple-100">
             {colors.filter((color) => !color.retired).map((color) => (
               <li key={color.id} className="grid grid-cols-3 items-center px-4 py-3 text-sm text-gray-800">
                 <span className="font-semibold">{color.name}</span>
@@ -642,7 +642,7 @@ export default function AdminPage() {
                         prev.map((entry) => (entry.id === color.id ? { ...entry, retired: true } : entry))
                       )
                     }
-                    className="rounded-full border border-amber-200 px-3 py-1 text-xs font-semibold text-amber-700 transition hover:bg-amber-50"
+                    className="rounded-full border border-purple-200 px-3 py-1 text-xs font-semibold text-purple-700 transition hover:bg-purple-50"
                   >
                     Retire
                   </button>
@@ -655,20 +655,20 @@ export default function AdminPage() {
           </ul>
         </div>
 
-        <div className="overflow-hidden rounded-2xl border border-amber-100 bg-white shadow-sm">
-          <div className="flex items-center justify-between border-b border-amber-100 px-4 py-3">
+        <div className="overflow-hidden rounded-2xl border border-purple-100 bg-white shadow-sm">
+          <div className="flex items-center justify-between border-b border-purple-100 px-4 py-3">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-wide text-amber-700">Archived colours</p>
+              <p className="text-xs font-semibold uppercase tracking-wide text-purple-700">Archived colours</p>
               <h3 className="text-lg font-bold text-gray-900">Retired glaze library</h3>
               <p className="text-sm text-gray-600">Restore colours to make them active again.</p>
             </div>
           </div>
-          <div className="grid grid-cols-3 bg-amber-50/60 px-4 py-3 text-xs font-semibold uppercase tracking-wide text-amber-800">
+          <div className="grid grid-cols-3 bg-purple-50/60 px-4 py-3 text-xs font-semibold uppercase tracking-wide text-purple-800">
             <span>Colour Name</span>
             <span>Brand</span>
             <span className="text-right">Actions</span>
           </div>
-          <ul className="divide-y divide-amber-100">
+          <ul className="divide-y divide-purple-100">
             {colors.filter((color) => color.retired).map((color) => (
               <li key={color.id} className="grid grid-cols-3 items-center px-4 py-3 text-sm text-gray-800">
                 <span className="font-semibold">{color.name}</span>
@@ -681,7 +681,7 @@ export default function AdminPage() {
                         prev.map((entry) => (entry.id === color.id ? { ...entry, retired: false } : entry))
                       )
                     }
-                    className="rounded-full border border-amber-200 px-3 py-1 text-xs font-semibold text-amber-700 transition hover:bg-amber-50"
+                    className="rounded-full border border-purple-200 px-3 py-1 text-xs font-semibold text-purple-700 transition hover:bg-purple-50"
                   >
                     Restore
                   </button>
@@ -695,7 +695,7 @@ export default function AdminPage() {
         </div>
       </div>
 
-      <div className="rounded-3xl border border-amber-100 bg-amber-50 p-6 shadow-inner">
+      <div className="rounded-3xl border border-purple-100 bg-purple-50 p-6 shadow-inner">
         <h3 className="text-lg font-semibold text-gray-900">Add a new colour</h3>
         <p className="mt-1 text-sm text-gray-600">
           Capture the glaze name and brand, then add it to the active studio list.
@@ -719,7 +719,7 @@ export default function AdminPage() {
               name="color-name"
               value={colorForm.name}
               onChange={(event) => setColorForm((prev) => ({ ...prev, name: event.target.value }))}
-              className="w-full rounded-xl border border-amber-200 bg-white px-3 py-2 text-sm shadow-inner focus:border-amber-400 focus:outline-none"
+              className="w-full rounded-xl border border-purple-200 bg-white px-3 py-2 text-sm shadow-inner focus:border-purple-400 focus:outline-none"
               placeholder="Frost Blue"
               required
             />
@@ -733,7 +733,7 @@ export default function AdminPage() {
               name="color-brand"
               value={colorForm.brand}
               onChange={(event) => setColorForm((prev) => ({ ...prev, brand: event.target.value }))}
-              className="w-full rounded-xl border border-amber-200 bg-white px-3 py-2 text-sm shadow-inner focus:border-amber-400 focus:outline-none"
+              className="w-full rounded-xl border border-purple-200 bg-white px-3 py-2 text-sm shadow-inner focus:border-purple-400 focus:outline-none"
               placeholder="Amaco"
               required
             />
@@ -741,14 +741,14 @@ export default function AdminPage() {
           <div className="flex items-center gap-2 pt-2">
             <button
               type="submit"
-              className="flex-1 rounded-full bg-amber-600 px-4 py-2 text-sm font-semibold text-white shadow-md transition hover:bg-amber-700"
+              className="flex-1 rounded-full bg-purple-600 px-4 py-2 text-sm font-semibold text-white shadow-md transition hover:bg-purple-700"
             >
               Add colour
             </button>
             <button
               type="button"
               onClick={() => setColorForm({ name: "", brand: "" })}
-              className="rounded-full border border-amber-200 px-4 py-2 text-sm font-semibold text-amber-700 transition hover:bg-amber-50"
+              className="rounded-full border border-purple-200 px-4 py-2 text-sm font-semibold text-purple-700 transition hover:bg-purple-50"
             >
               Clear
             </button>
@@ -783,11 +783,11 @@ export default function AdminPage() {
   const activeSummary = tabs.find((tab) => tab.id === activeTab)?.summary;
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-amber-50 via-white to-orange-50">
+    <main className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-indigo-50">
       <div className="mx-auto flex max-w-6xl flex-col gap-10 px-6 py-10">
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-sm font-semibold uppercase tracking-wide text-amber-700">
+            <p className="text-sm font-semibold uppercase tracking-wide text-purple-700">
               Admin Panel
             </p>
             <h1 className="text-4xl font-bold text-gray-900">Manage your studio</h1>
@@ -795,7 +795,7 @@ export default function AdminPage() {
           </div>
           <Link
             href="/"
-            className="rounded-full border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-800 shadow-sm transition hover:border-amber-200 hover:text-amber-800"
+            className="rounded-full border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-800 shadow-sm transition hover:border-purple-200 hover:text-purple-800"
           >
             Back to home
           </Link>
@@ -813,14 +813,14 @@ export default function AdminPage() {
                     onClick={() => setActiveTab(tab.id)}
                     className={`w-full rounded-2xl border px-4 py-3 text-left text-sm font-semibold transition ${
                       isActive
-                        ? "border-amber-200 bg-amber-600 text-white shadow-lg"
-                        : "border-amber-100 bg-white text-gray-800 hover:border-amber-200 hover:bg-amber-50"
+                        ? "border-purple-200 bg-purple-600 text-white shadow-lg"
+                        : "border-purple-100 bg-white text-gray-800 hover:border-purple-200 hover:bg-purple-50"
                     }`}
                   >
                     {tab.label}
                     <span
                       className={`mt-1 block text-xs ${
-                        isActive ? "text-amber-50/90" : "text-gray-500"
+                        isActive ? "text-purple-50/90" : "text-gray-500"
                       }`}
                     >
                       {tab.summary}
@@ -831,7 +831,7 @@ export default function AdminPage() {
             </div>
           </aside>
 
-          <section className="flex-1 rounded-3xl border border-amber-100 bg-white p-6 shadow-lg">
+          <section className="flex-1 rounded-3xl border border-purple-100 bg-white p-6 shadow-lg">
             {activeContent}
           </section>
         </div>

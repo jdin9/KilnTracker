@@ -258,8 +258,8 @@ export default function FiringDetailPage({ params }: { params: { id: string } })
   if (loading) {
     return (
       <main className="p-6">
-        <div className="mx-auto max-w-4xl rounded-2xl bg-white/80 p-6 shadow ring-1 ring-amber-100">
-          <p className="text-sm font-semibold text-amber-800">Loading firing details…</p>
+        <div className="mx-auto max-w-4xl rounded-2xl bg-white/80 p-6 shadow ring-1 ring-purple-100">
+          <p className="text-sm font-semibold text-purple-800">Loading firing details…</p>
         </div>
       </main>
     );
@@ -359,18 +359,18 @@ export default function FiringDetailPage({ params }: { params: { id: string } })
   const statusLabel = firing.status === "open" ? "Open firing" : "Closed";
 
   return (
-    <main className="bg-gradient-to-br from-amber-50 via-white to-orange-50 p-6">
+    <main className="bg-gradient-to-br from-purple-50 via-white to-indigo-50 p-6">
       <div className="mx-auto max-w-5xl space-y-8">
         <header className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
           <div className="space-y-3">
             <Link
               href="/kiln"
-              className="inline-flex w-fit items-center gap-2 text-sm font-semibold text-amber-800 underline-offset-4 hover:underline"
+              className="inline-flex w-fit items-center gap-2 text-sm font-semibold text-purple-800 underline-offset-4 hover:underline"
             >
               ← Back to firings
             </Link>
             <div className="space-y-1">
-              <p className="text-sm font-semibold uppercase tracking-wide text-amber-700">Kiln Tracker</p>
+              <p className="text-sm font-semibold uppercase tracking-wide text-purple-700">Kiln Tracker</p>
               <h1 className="text-3xl font-bold text-gray-900">{firing.kilnName} firing</h1>
               <p className="text-sm text-gray-700">
                 {firing.firingType} • Target cone {firing.targetCone} • {statusLabel}
@@ -381,7 +381,7 @@ export default function FiringDetailPage({ params }: { params: { id: string } })
               </p>
             </div>
           </div>
-          <div className="rounded-2xl bg-white/80 p-4 shadow-sm ring-1 ring-amber-100">
+          <div className="rounded-2xl bg-white/80 p-4 shadow-sm ring-1 ring-purple-100">
             <dl className="grid grid-cols-2 gap-x-6 gap-y-2 text-sm text-gray-700">
               <div>
                 <dt className="text-xs uppercase tracking-wide text-gray-500">Kiln</dt>
@@ -404,7 +404,7 @@ export default function FiringDetailPage({ params }: { params: { id: string } })
         </header>
 
         <section className="grid gap-4 md:grid-cols-2">
-          <div className="rounded-3xl bg-white/90 p-4 shadow-lg ring-1 ring-amber-100">
+          <div className="rounded-3xl bg-white/90 p-4 shadow-lg ring-1 ring-purple-100">
             <div className="flex items-center justify-between">
               <div>
                 <h3 className="text-lg font-semibold text-gray-900">Load & reference photos</h3>
@@ -416,7 +416,7 @@ export default function FiringDetailPage({ params }: { params: { id: string } })
                 firing.loadPhotos.map((photo) => (
                   <span
                     key={photo}
-                    className="inline-flex items-center rounded-full bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-800 ring-1 ring-amber-100"
+                    className="inline-flex items-center rounded-full bg-purple-50 px-3 py-1 text-xs font-semibold text-purple-800 ring-1 ring-purple-100"
                   >
                     {photo}
                   </span>
@@ -428,7 +428,7 @@ export default function FiringDetailPage({ params }: { params: { id: string } })
             {firing.notes && <p className="mt-3 text-sm text-gray-700">Notes: {firing.notes}</p>}
           </div>
 
-          <div className="rounded-3xl bg-white/90 p-4 shadow-lg ring-1 ring-amber-100">
+          <div className="rounded-3xl bg-white/90 p-4 shadow-lg ring-1 ring-purple-100">
             <div className="flex items-center justify-between">
               <div>
                 <h3 className="text-lg font-semibold text-gray-900">Pieces in this firing</h3>
@@ -438,7 +438,7 @@ export default function FiringDetailPage({ params }: { params: { id: string } })
             <ul className="mt-3 space-y-2">
               {firing.pieces && firing.pieces.length > 0 ? (
                 firing.pieces.map((piece) => (
-                  <li key={piece.name} className="rounded-xl bg-amber-50 px-3 py-2 text-sm text-gray-800 ring-1 ring-amber-100">
+                  <li key={piece.name} className="rounded-xl bg-purple-50 px-3 py-2 text-sm text-gray-800 ring-1 ring-purple-100">
                     <p className="font-semibold text-gray-900">{piece.name}</p>
                     {piece.notes && <p className="text-xs text-gray-700">{piece.notes}</p>}
                   </li>
@@ -450,7 +450,7 @@ export default function FiringDetailPage({ params }: { params: { id: string } })
           </div>
         </section>
 
-        <section className="rounded-3xl bg-white/90 p-6 shadow-lg ring-1 ring-amber-100 space-y-4">
+        <section className="rounded-3xl bg-white/90 p-6 shadow-lg ring-1 ring-purple-100 space-y-4">
           <div className="flex items-center justify-between">
             <div>
               <h2 className="text-xl font-semibold text-gray-900">Log activity</h2>
@@ -458,7 +458,7 @@ export default function FiringDetailPage({ params }: { params: { id: string } })
             </div>
           </div>
           {firing.status === "closed" && (
-            <p className="rounded-xl bg-amber-50 px-4 py-2 text-sm text-amber-800 ring-1 ring-amber-100">
+            <p className="rounded-xl bg-purple-50 px-4 py-2 text-sm text-purple-800 ring-1 ring-purple-100">
               This firing has been closed. Add a new firing to continue logging.
             </p>
           )}
@@ -567,7 +567,7 @@ export default function FiringDetailPage({ params }: { params: { id: string } })
               <div className="lg:col-span-5">
                 <button
                   type="submit"
-                  className="rounded-full bg-amber-600 px-4 py-2 text-sm font-semibold text-white shadow hover:bg-amber-700"
+                  className="rounded-full bg-purple-600 px-4 py-2 text-sm font-semibold text-white shadow hover:bg-purple-700"
                 >
                   Add activity
                 </button>
@@ -576,14 +576,14 @@ export default function FiringDetailPage({ params }: { params: { id: string } })
           )}
         </section>
 
-        <section className="rounded-3xl bg-white/90 p-6 shadow-lg ring-1 ring-amber-100">
+        <section className="rounded-3xl bg-white/90 p-6 shadow-lg ring-1 ring-purple-100">
           <div className="flex items-center justify-between">
             <div>
               <h2 className="text-xl font-semibold text-gray-900">Activity log</h2>
               <p className="text-sm text-gray-600">Manual dial and switch changes, temps, and notes.</p>
             </div>
           </div>
-          <div className="mt-4 divide-y divide-amber-50/80">
+          <div className="mt-4 divide-y divide-purple-50/80">
             {sortedEvents.map((event) => (
               <div key={event.id} className="flex flex-col gap-2 py-3 md:flex-row md:items-center md:justify-between">
                 <div className="space-y-1">
@@ -602,14 +602,14 @@ export default function FiringDetailPage({ params }: { params: { id: string } })
                 </div>
                 <div className="flex items-center gap-3">
                   {event.pyrometerTemp !== undefined && (
-                    <div className="rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-800 ring-1 ring-amber-200">
+                    <div className="rounded-full bg-purple-100 px-3 py-1 text-xs font-semibold text-purple-800 ring-1 ring-purple-200">
                       {event.pyrometerTemp}°F
                     </div>
                   )}
                   <button
                     type="button"
                     onClick={() => handleDelete(event.id)}
-                    className="text-xs font-semibold text-amber-800 underline-offset-4 hover:underline"
+                    className="text-xs font-semibold text-purple-800 underline-offset-4 hover:underline"
                   >
                     Delete
                   </button>
