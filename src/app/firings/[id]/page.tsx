@@ -364,7 +364,7 @@ export default function FiringDetailPage({ params }: { params: { id: string } })
         <header className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
           <div className="space-y-3">
             <Link
-              href="/firings"
+              href="/kiln"
               className="inline-flex w-fit items-center gap-2 text-sm font-semibold text-amber-800 underline-offset-4 hover:underline"
             >
               ← Back to firings
