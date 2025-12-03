@@ -10,7 +10,7 @@ export default function NewFiringPage() {
 
   const handleClose = () => {
     setOpen(false);
-    router.push("/firings");
+    router.push("/kiln");
   };
 
   return (

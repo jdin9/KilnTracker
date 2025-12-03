@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { FormEvent, ReactNode, useMemo, useState } from "react";
+import { FormEvent, ReactNode, useEffect, useMemo, useState } from "react";
 
 type Tab = {
   id: string;
@@ -36,6 +36,8 @@ type Kiln = {
   switches?: number;
   dialPositions?: string[];
 };
+
+const KILNS_STORAGE_KEY = "kiln-admin-kilns";
 
 const initialUsers: User[] = [
   {
@@ -148,6 +150,23 @@ export default function AdminPage() {
     name: "",
     brand: "",
   });
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const storedKilns = window.localStorage.getItem(KILNS_STORAGE_KEY);
+    if (storedKilns) {
+      try {
+        setKilns(JSON.parse(storedKilns));
+      } catch (error) {
+        console.error("Unable to parse stored kilns", error);
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    window.localStorage.setItem(KILNS_STORAGE_KEY, JSON.stringify(kilns));
+  }, [kilns]);
 
   const resetForm = () => {
     setForm({ firstName: "", lastName: "", username: "", password: "" });
