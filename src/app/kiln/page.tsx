@@ -182,12 +182,15 @@ export default function KilnDashboardPage() {
       if (open) {
         const parsed = JSON.parse(open);
         const normalized = Array.isArray(parsed)
-          ? parsed.map((firing: any, index: number) => ({
-              ...firing,
-              loadPhotos: firing.loadPhotos ?? [],
-              firstPhoto: firing.firstPhoto ?? getFirstPhoto(firing.loadPhotos),
-              startedAt: firing.startedAt ?? firing.startTime ?? firing.date ?? defaultOpenFirings[index]?.startedAt,
-            }))
+          ? parsed.map((firing: any, index: number) => {
+              const collected = collectPhotosForFiring(firing.id, firing.loadPhotos ?? []);
+              return {
+                ...firing,
+                loadPhotos: firing.loadPhotos ?? [],
+                firstPhoto: collected[0] ?? firing.firstPhoto ?? getFirstPhoto(firing.loadPhotos),
+                startedAt: firing.startedAt ?? firing.startTime ?? firing.date ?? defaultOpenFirings[index]?.startedAt,
+              };
+            })
           : defaultOpenFirings;
         setOpenFirings(normalized);
       } else {
@@ -201,11 +204,14 @@ export default function KilnDashboardPage() {
       if (history) {
         const parsedHistory = JSON.parse(history);
         const normalizedHistory = Array.isArray(parsedHistory)
-          ? parsedHistory.map((firing: any) => ({
-              ...firing,
-              loadPhotos: firing.loadPhotos ?? [],
-              firstPhoto: firing.firstPhoto ?? getFirstPhoto(firing.loadPhotos),
-            }))
+          ? parsedHistory.map((firing: any) => {
+              const collected = collectPhotosForFiring(firing.id, firing.loadPhotos ?? []);
+              return {
+                ...firing,
+                loadPhotos: firing.loadPhotos ?? [],
+                firstPhoto: collected[0] ?? firing.firstPhoto ?? getFirstPhoto(firing.loadPhotos),
+              };
+            })
           : defaultHistory;
         setFiringHistory(normalizedHistory);
       } else {
