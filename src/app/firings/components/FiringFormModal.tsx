@@ -151,6 +151,7 @@ export function FiringFormModal({ open, onClose, mode = "create", initialData }:
 
   const persistOpenFiring = (payload: any) => {
     if (typeof window === "undefined") return;
+    const reducedPhotos = form.loadPhotos.map(({ name, src }) => ({ name, src }));
     const kiln = kilnOptions.find((k) => k.id === form.kilnId);
     const existing = window.localStorage.getItem("kiln-open-firings");
     const parsed = existing ? JSON.parse(existing) : [];
