@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 
 import { formatDate, formatDateTime } from "@/lib/dateFormat";
+import { getConeTemperature } from "@/lib/coneChart";
 
 type OpenFiring = {
   id: string;
@@ -114,6 +115,16 @@ export default function KilnDashboardPage() {
   const [openFirings, setOpenFirings] = useState<OpenFiring[]>(defaultOpenFirings);
   const [firingHistory, setFiringHistory] = useState<FiringHistoryRow[]>(defaultHistory);
 
+  const withTargetTemp = (firing: OpenFiring): OpenFiring => ({
+    ...firing,
+    targetTemp: firing.targetTemp ?? getConeTemperature(firing.targetCone),
+  });
+
+  const withHistoryTargetTemp = (firing: FiringHistoryRow): FiringHistoryRow => ({
+    ...firing,
+    targetTemp: firing.targetTemp ?? getConeTemperature(firing.targetCone),
+  });
+
   useEffect(() => {
     if (typeof window === "undefined") return;
 
@@ -122,7 +133,7 @@ export default function KilnDashboardPage() {
 
     try {
       if (open) {
-        setOpenFirings(JSON.parse(open));
+        setOpenFirings(JSON.parse(open).map((firing: OpenFiring) => withTargetTemp(firing)));
       } else {
         window.localStorage.setItem("kiln-open-firings", JSON.stringify(defaultOpenFirings));
       }
@@ -132,7 +143,9 @@ export default function KilnDashboardPage() {
 
     try {
       if (history) {
-        setFiringHistory(JSON.parse(history));
+        setFiringHistory(
+          JSON.parse(history).map((firing: FiringHistoryRow) => withHistoryTargetTemp(firing))
+        );
       } else {
         window.localStorage.setItem("kiln-firing-history", JSON.stringify(defaultHistory));
       }

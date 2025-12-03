@@ -3,6 +3,8 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 
+import { coneChart, getConeTemperature } from "@/lib/coneChart";
+
 // TODO: replace with real tRPC mutation (e.g., trpc.firing.create.useMutation)
 const useCreateFiring = () => ({
   mutateAsync: async (input: any) => {
@@ -36,7 +38,7 @@ const defaultKilnOptions: KilnOption[] = [
 
 const KILN_STORAGE_KEY = "kiln-definitions";
 
-const coneOptions = ["022", "018", "06", "05", "04", "03", "02", "01", "1", "2", "4", "5", "6", "8", "10"];
+const coneOptions = [...coneChart].reverse().map((entry) => entry.cone);
 
 const fillLevels = [
   { value: "sparse", label: "Sparse" },
@@ -94,13 +96,15 @@ export function FiringFormModal({ open, onClose, mode = "create", initialData }:
   const [form, setForm] = useState({
     kilnId: initialData?.kilnId ?? defaultKilnOptions[0]?.id ?? "",
     firingType: initialData?.firingType ?? "bisque",
-    targetCone: initialData?.targetCone ?? coneOptions[5],
+    targetCone: initialData?.targetCone ?? coneOptions.find((cone) => cone === "06") ?? coneOptions[0],
     fillLevel: initialData?.fillLevel ?? fillLevels[0].value,
     startTime: initialData?.startTime ?? toLocalDateTime(new Date()),
     outsideTempStart: initialData?.outsideTempStart ?? "",
     notes: initialData?.notes ?? "",
     loadPhotos: [] as File[],
   });
+
+  const targetTemp = useMemo(() => getConeTemperature(form.targetCone), [form.targetCone]);
 
   const coneChoices = useMemo(() => coneOptions, []);
 
@@ -165,7 +169,7 @@ export function FiringFormModal({ open, onClose, mode = "create", initialData }:
       kiln_id: form.kilnId,
       firing_type: form.firingType,
       target_cone: form.targetCone,
-      target_temp: undefined,
+      target_temp: targetTemp,
       fill_level: form.fillLevel,
       outside_temp_start: form.outsideTempStart ? Number(form.outsideTempStart) : undefined,
       start_time: new Date(form.startTime).toISOString(),
@@ -176,7 +180,7 @@ export function FiringFormModal({ open, onClose, mode = "create", initialData }:
     persistOpenFiring({
       id: res.id,
       target_cone: form.targetCone,
-      target_temp: undefined,
+      target_temp: targetTemp,
       start_time: new Date(form.startTime).toISOString(),
     });
 

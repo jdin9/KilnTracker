@@ -5,6 +5,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { formatDateTime } from "@/lib/dateFormat";
+import { getConeTemperature } from "@/lib/coneChart";
 
 type ActivityType = "dial" | "switch" | "temp" | "note" | "shutdown" | "close";
 
@@ -184,7 +185,7 @@ const getStoredFiring = (id: string): Firing | null => {
     firingType: match.firingType ?? "bisque",
     status: "open",
     targetCone: match.targetCone,
-    targetTemp: match.targetTemp,
+    targetTemp: match.targetTemp ?? getConeTemperature(match.targetCone),
     startTime: match.startedAt,
   };
 };
@@ -215,7 +216,7 @@ const getStoredHistoryFiring = (id: string): Firing | null => {
     firingType: match.firingType ?? "bisque",
     status: "closed",
     targetCone: match.targetCone,
-    targetTemp: match.targetTemp,
+    targetTemp: match.targetTemp ?? getConeTemperature(match.targetCone),
     startTime: match.date,
     endTime: match.endTime,
     maxTemp: match.tempReached,
@@ -362,12 +363,12 @@ export default function FiringDetailPage({ params }: { params: { id: string } })
 
     if (inferredType === "close") {
       const endTime = new Date(form.timestamp).toISOString();
-      const updatedFiring: Firing = {
-        ...firing,
-        status: "closed",
-        endTime,
-        maxTemp: activity.pyrometerTemp ?? firing.maxTemp,
-      };
+        const updatedFiring: Firing = {
+          ...firing,
+          status: "closed",
+          endTime,
+          maxTemp: activity.pyrometerTemp ?? firing.maxTemp,
+        };
       setFiring(updatedFiring);
 
       if (typeof window !== "undefined") {
@@ -390,6 +391,7 @@ export default function FiringDetailPage({ params }: { params: { id: string } })
           status: "closed",
           endTime,
           maxTemp: activity.pyrometerTemp ?? firing.maxTemp,
+          targetTemp: firing.targetTemp ?? getConeTemperature(firing.targetCone),
         };
         window.localStorage.setItem(
           HISTORY_DETAIL_KEY,
@@ -413,7 +415,7 @@ export default function FiringDetailPage({ params }: { params: { id: string } })
               location: firing.location,
               firingType: firing.firingType,
               targetCone: firing.targetCone,
-              targetTemp: firing.targetTemp,
+              targetTemp: firing.targetTemp ?? getConeTemperature(firing.targetCone),
               tempReached: activity.pyrometerTemp ?? firing.maxTemp,
               status: "Completed",
               endTime,
