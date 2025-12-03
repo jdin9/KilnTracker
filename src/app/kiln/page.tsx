@@ -1,9 +1,12 @@
 'use client';
+/* eslint-disable @next/next/no-img-element */
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 
 import { formatDate, formatDateTime } from "@/lib/dateFormat";
+
+type PhotoAsset = { name: string; src: string };
 
 type OpenFiring = {
   id: string;
@@ -12,6 +15,8 @@ type OpenFiring = {
   targetCone: string;
   targetTemp?: number;
   startedAt: string;
+  loadPhotos?: (string | PhotoAsset)[];
+  firstPhoto?: PhotoAsset;
 };
 
 type LoadedPiece = {
@@ -30,9 +35,34 @@ type FiringHistoryRow = {
   targetTemp?: number;
   tempReached?: number;
   status: string;
-  loadPhotos?: string[];
+  loadPhotos?: (string | PhotoAsset)[];
+  firstPhoto?: PhotoAsset;
   pieces?: LoadedPiece[];
   endTime?: string;
+};
+
+const palette = ["#a855f7", "#6366f1", "#f97316", "#0ea5e9"];
+
+const resolvePhotoUrl = (name: string, index = 0) => {
+  if (name.startsWith("http") || name.startsWith("data:") || name.startsWith("blob:")) return name;
+  const color = palette[index % palette.length];
+  const label = name.replace(/[-_]/g, " ");
+  const svg = `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 300' preserveAspectRatio='xMidYMid slice'><rect width='400' height='300' fill='${color}'/><text x='50%' y='50%' dominant-baseline='middle' text-anchor='middle' font-family='Inter, Arial' font-size='28' fill='white'>${label}</text></svg>`;
+  return `data:image/svg+xml,${encodeURIComponent(svg)}`;
+};
+
+const normalizePhotos = (photos?: (string | PhotoAsset)[]) => {
+  if (!photos || photos.length === 0) return [] as PhotoAsset[];
+  return photos.map((photo, index) =>
+    typeof photo === "string"
+      ? { name: photo, src: resolvePhotoUrl(photo, index) }
+      : { name: photo.name, src: photo.src ?? resolvePhotoUrl(photo.name, index) },
+  );
+};
+
+const getFirstPhoto = (photos?: (string | PhotoAsset)[]) => {
+  const normalized = normalizePhotos(photos);
+  return normalized[0];
 };
 
 const defaultOpenFirings: OpenFiring[] = [
@@ -43,6 +73,14 @@ const defaultOpenFirings: OpenFiring[] = [
     targetCone: "6",
     targetTemp: 2232,
     startedAt: "2024-06-02T08:15:00Z",
+    loadPhotos: [
+      { name: "load-front.jpg", src: resolvePhotoUrl("load-front.jpg", 0) },
+      { name: "load-shelf.jpg", src: resolvePhotoUrl("load-shelf.jpg", 1) },
+    ],
+    firstPhoto: getFirstPhoto([
+      { name: "load-front.jpg", src: resolvePhotoUrl("load-front.jpg", 0) },
+      { name: "load-shelf.jpg", src: resolvePhotoUrl("load-shelf.jpg", 1) },
+    ]),
   },
   {
     id: "2",
@@ -51,6 +89,8 @@ const defaultOpenFirings: OpenFiring[] = [
     targetCone: "04",
     targetTemp: 1940,
     startedAt: "2024-06-03T06:30:00Z",
+    loadPhotos: [{ name: "test-candling.jpg", src: resolvePhotoUrl("test-candling.jpg", 2) }],
+    firstPhoto: getFirstPhoto([{ name: "test-candling.jpg", src: resolvePhotoUrl("test-candling.jpg", 2) }]),
   },
 ];
 
@@ -67,7 +107,14 @@ const defaultHistory: FiringHistoryRow[] = [
     tempReached: 2225,
     status: "Completed",
     endTime: "2024-05-25T22:10:00Z",
-    loadPhotos: ["load-front.jpg", "load-side.jpg"],
+    loadPhotos: [
+      { name: "load-front.jpg", src: resolvePhotoUrl("load-front.jpg", 0) },
+      { name: "load-side.jpg", src: resolvePhotoUrl("load-side.jpg", 1) },
+    ],
+    firstPhoto: getFirstPhoto([
+      { name: "load-front.jpg", src: resolvePhotoUrl("load-front.jpg", 0) },
+      { name: "load-side.jpg", src: resolvePhotoUrl("load-side.jpg", 1) },
+    ]),
     pieces: [
       { name: "Mugs (8)", notes: "Shino outside" },
       { name: "Dinner plates (4)", notes: "Celadon" },
@@ -85,7 +132,8 @@ const defaultHistory: FiringHistoryRow[] = [
     tempReached: 1935,
     status: "Completed",
     endTime: "2024-05-10T21:45:00Z",
-    loadPhotos: ["test-bisque.jpg"],
+    loadPhotos: [{ name: "test-bisque.jpg", src: resolvePhotoUrl("test-bisque.jpg", 2) }],
+    firstPhoto: getFirstPhoto([{ name: "test-bisque.jpg", src: resolvePhotoUrl("test-bisque.jpg", 2) }]),
     pieces: [
       { name: "Test tiles (12)" },
       { name: "Cups (6)", notes: "Handle stress test" },
@@ -120,6 +168,9 @@ export default function KilnDashboardPage() {
   const [maxReached, setMaxReached] = useState<string>("");
   const [startDate, setStartDate] = useState<string>("");
   const [endDate, setEndDate] = useState<string>("");
+  const [galleryPhotos, setGalleryPhotos] = useState<PhotoAsset[]>([]);
+  const [activePhotoIndex, setActivePhotoIndex] = useState<number | null>(null);
+  const [galleryTitle, setGalleryTitle] = useState<string>("");
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -129,7 +180,16 @@ export default function KilnDashboardPage() {
 
     try {
       if (open) {
-        setOpenFirings(JSON.parse(open));
+        const parsed = JSON.parse(open);
+        const normalized = Array.isArray(parsed)
+          ? parsed.map((firing: any, index: number) => ({
+              ...firing,
+              loadPhotos: firing.loadPhotos ?? [],
+              firstPhoto: firing.firstPhoto ?? getFirstPhoto(firing.loadPhotos),
+              startedAt: firing.startedAt ?? firing.startTime ?? firing.date ?? defaultOpenFirings[index]?.startedAt,
+            }))
+          : defaultOpenFirings;
+        setOpenFirings(normalized);
       } else {
         window.localStorage.setItem("kiln-open-firings", JSON.stringify(defaultOpenFirings));
       }
@@ -139,7 +199,15 @@ export default function KilnDashboardPage() {
 
     try {
       if (history) {
-        setFiringHistory(JSON.parse(history));
+        const parsedHistory = JSON.parse(history);
+        const normalizedHistory = Array.isArray(parsedHistory)
+          ? parsedHistory.map((firing: any) => ({
+              ...firing,
+              loadPhotos: firing.loadPhotos ?? [],
+              firstPhoto: firing.firstPhoto ?? getFirstPhoto(firing.loadPhotos),
+            }))
+          : defaultHistory;
+        setFiringHistory(normalizedHistory);
       } else {
         window.localStorage.setItem("kiln-firing-history", JSON.stringify(defaultHistory));
       }
@@ -147,6 +215,73 @@ export default function KilnDashboardPage() {
       console.error("Unable to parse firing history", error);
     }
   }, []);
+
+  const collectPhotosForFiring = (firingId: string, loadPhotos?: (string | PhotoAsset)[]) => {
+    const unique = new Map<string, PhotoAsset>();
+
+    const addPhotos = (list?: (string | PhotoAsset)[]) => {
+      normalizePhotos(list).forEach((photo) => {
+        const key = `${photo.name}-${photo.src}`;
+        if (!unique.has(key)) {
+          unique.set(key, photo);
+        }
+      });
+    };
+
+    addPhotos(loadPhotos);
+
+    if (typeof window !== "undefined") {
+      ["kiln-open-firing-details", "kiln-firing-history-details"].forEach((key) => {
+        const raw = window.localStorage.getItem(key);
+        if (!raw) return;
+        try {
+          const parsed = JSON.parse(raw);
+          const detail = parsed?.[firingId];
+          if (detail?.loadPhotos) {
+            addPhotos(detail.loadPhotos);
+          }
+        } catch (error) {
+          console.error(`Unable to parse ${key} for photos`, error);
+        }
+      });
+
+      const eventsRaw = window.localStorage.getItem(`firing-${firingId}-events`);
+      if (eventsRaw) {
+        try {
+          const events = JSON.parse(eventsRaw);
+          events.forEach((event: any) => addPhotos(event.photos));
+        } catch (error) {
+          console.error("Unable to parse stored firing events for photos", error);
+        }
+      }
+    }
+
+    return Array.from(unique.values());
+  };
+
+  const openGalleryForFiring = (firingId: string, loadPhotos: (string | PhotoAsset)[] | undefined, title: string) => {
+    const photos = collectPhotosForFiring(firingId, loadPhotos);
+    if (photos.length === 0) return;
+    setGalleryPhotos(photos);
+    setActivePhotoIndex(0);
+    setGalleryTitle(title);
+  };
+
+  const closeGallery = () => {
+    setActivePhotoIndex(null);
+    setGalleryPhotos([]);
+    setGalleryTitle("");
+  };
+
+  const showNextPhoto = () => {
+    if (activePhotoIndex === null || galleryPhotos.length === 0) return;
+    setActivePhotoIndex((prev) => (prev === null ? prev : (prev + 1) % galleryPhotos.length));
+  };
+
+  const showPreviousPhoto = () => {
+    if (activePhotoIndex === null || galleryPhotos.length === 0) return;
+    setActivePhotoIndex((prev) => (prev === null ? prev : (prev - 1 + galleryPhotos.length) % galleryPhotos.length));
+  };
 
   const kilnOptions = useMemo(() => {
     const kilnNames = firingHistory.map((firing) => firing.kiln);
@@ -239,16 +374,55 @@ export default function KilnDashboardPage() {
                 href={`/firings/${firing.id}`}
                 className="group flex items-center justify-between rounded-2xl border border-purple-100 bg-gradient-to-br from-purple-50 to-white p-4 shadow-sm transition hover:-translate-y-1 hover:shadow-md"
               >
-                <div className="space-y-1">
-                  <p className="text-sm font-semibold text-purple-700">{firing.kilnName}</p>
-                  <h3 className="text-lg font-bold text-gray-900">Cone {firing.targetCone}</h3>
-                  <p className="text-sm text-gray-700">
-                    Target {firing.targetTemp ? `${firing.targetTemp}°F` : "—"}
-                  </p>
-                  <p className="text-xs text-gray-500">Started {formatDateTime(firing.startedAt)}</p>
+                <div className="flex items-center gap-4">
+                  {firing.firstPhoto ? (
+                    <button
+                      type="button"
+                      onClick={(event) => {
+                        event.preventDefault();
+                        event.stopPropagation();
+                        openGalleryForFiring(firing.id, firing.loadPhotos, firing.kilnName);
+                      }}
+                      className="group/btn relative overflow-hidden rounded-xl ring-1 ring-purple-200"
+                    >
+                      <img
+                        src={firing.firstPhoto.src}
+                        alt={`${firing.kilnName} first photo`}
+                        className="h-20 w-24 object-cover"
+                      />
+                      <span className="absolute bottom-1 left-1 rounded-full bg-black/60 px-2 py-0.5 text-[10px] font-semibold text-white">Photos</span>
+                    </button>
+                  ) : (
+                    <div className="flex h-20 w-24 items-center justify-center rounded-xl bg-purple-50 text-xs font-semibold text-purple-700 ring-1 ring-dashed ring-purple-200">
+                      No photo
+                    </div>
+                  )}
+                  <div className="space-y-1">
+                    <p className="text-sm font-semibold text-purple-700">{firing.kilnName}</p>
+                    <h3 className="text-lg font-bold text-gray-900">Cone {firing.targetCone}</h3>
+                    <p className="text-sm text-gray-700">
+                      Target {firing.targetTemp ? `${firing.targetTemp}°F` : "—"}
+                    </p>
+                    <p className="text-xs text-gray-500">Started {formatDateTime(firing.startedAt)}</p>
+                  </div>
                 </div>
-                <div className="flex h-16 w-16 items-center justify-center rounded-full bg-purple-100 text-sm font-semibold text-purple-800 ring-2 ring-purple-200">
-                  {firing.status}
+                <div className="flex flex-col items-end gap-2">
+                  <div className="flex h-16 w-16 items-center justify-center rounded-full bg-purple-100 text-sm font-semibold text-purple-800 ring-2 ring-purple-200">
+                    {firing.status}
+                  </div>
+                  {firing.firstPhoto && (
+                    <button
+                      type="button"
+                      onClick={(event) => {
+                        event.preventDefault();
+                        event.stopPropagation();
+                        openGalleryForFiring(firing.id, firing.loadPhotos, firing.kilnName);
+                      }}
+                      className="text-xs font-semibold text-purple-700 underline-offset-4 hover:underline"
+                    >
+                      View photos
+                    </button>
+                  )}
                 </div>
               </Link>
             ))}
@@ -378,6 +552,9 @@ export default function KilnDashboardPage() {
                     Kiln
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wide text-purple-800">
+                    Photos
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wide text-purple-800">
                     Target Cone
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wide text-purple-800">
@@ -396,6 +573,24 @@ export default function KilnDashboardPage() {
                       {formatDate(firing.date)}
                     </td>
                     <td className="px-6 py-4 text-sm text-gray-700">{firing.kiln}</td>
+                    <td className="px-6 py-4 text-sm text-gray-700">
+                      {firing.firstPhoto ? (
+                        <button
+                          type="button"
+                          onClick={() => openGalleryForFiring(firing.id, firing.loadPhotos, firing.kiln)}
+                          className="group relative overflow-hidden rounded-lg ring-1 ring-purple-200"
+                        >
+                          <img
+                            src={firing.firstPhoto.src}
+                            alt={`${firing.kiln} firing photo`}
+                            className="h-16 w-20 object-cover"
+                          />
+                          <span className="absolute bottom-1 left-1 rounded-full bg-black/60 px-1.5 py-0.5 text-[10px] font-semibold text-white">View</span>
+                        </button>
+                      ) : (
+                        <span className="text-xs font-medium text-gray-500">No photo</span>
+                      )}
+                    </td>
                     <td className="px-6 py-4 text-sm text-gray-700">Cone {firing.targetCone}</td>
                     <td className="px-6 py-4 text-sm text-gray-700">
                       {firing.targetTemp ? `${firing.targetTemp}°F` : "—"}
@@ -418,6 +613,51 @@ export default function KilnDashboardPage() {
           </div>
         </section>
       </div>
+
+      {activePhotoIndex !== null && galleryPhotos[activePhotoIndex] && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
+          <div className="relative w-full max-w-4xl rounded-3xl bg-white/95 p-4 shadow-2xl ring-1 ring-purple-200">
+            <div className="absolute right-3 top-3 flex gap-2">
+              <button
+                type="button"
+                onClick={showPreviousPhoto}
+                className="rounded-full bg-purple-100 p-2 text-purple-800 shadow hover:bg-purple-200 disabled:cursor-not-allowed disabled:opacity-50"
+                disabled={galleryPhotos.length <= 1}
+              >
+                ←
+              </button>
+              <button
+                type="button"
+                onClick={showNextPhoto}
+                className="rounded-full bg-purple-100 p-2 text-purple-800 shadow hover:bg-purple-200 disabled:cursor-not-allowed disabled:opacity-50"
+                disabled={galleryPhotos.length <= 1}
+              >
+                →
+              </button>
+              <button
+                type="button"
+                onClick={closeGallery}
+                className="rounded-full bg-gray-200 px-3 py-1 text-sm font-semibold text-gray-800 shadow hover:bg-gray-300"
+              >
+                Close
+              </button>
+            </div>
+
+            <div className="flex flex-col items-center gap-3">
+              <p className="text-sm font-semibold text-purple-800">{galleryTitle}</p>
+              <img
+                src={galleryPhotos[activePhotoIndex].src}
+                alt={galleryPhotos[activePhotoIndex].name}
+                className="max-h-[70vh] w-full rounded-2xl object-contain"
+              />
+              <p className="text-sm font-semibold text-gray-800">{galleryPhotos[activePhotoIndex].name}</p>
+              {galleryPhotos.length > 1 && (
+                <p className="text-xs text-gray-600">Photo {activePhotoIndex + 1} of {galleryPhotos.length}</p>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 }
