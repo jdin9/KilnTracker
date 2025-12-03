@@ -4,6 +4,8 @@ import React, { useMemo, useState } from "react";
 import Link from "next/link";
 import { FiringFormModal } from "./components/FiringFormModal";
 
+import { formatDateTime } from "@/lib/dateFormat";
+
 // TODO: replace with real tRPC hooks, e.g., useFiringHistory(filters)
 const mockFirings = [
   {
@@ -134,7 +136,7 @@ export default function FiringsPage() {
             </div>
             <div className="text-sm text-gray-700 text-right">
               <div>Target Cone: {firing.targetCone}</div>
-              <div>Start: {new Date(firing.startTime).toLocaleString()}</div>
+              <div>Start: {formatDateTime(firing.startTime)}</div>
               <div>Max Temp: {firing.maxTemp ?? "—"}</div>
             </div>
           </Link>
