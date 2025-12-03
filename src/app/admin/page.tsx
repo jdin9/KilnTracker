@@ -4,6 +4,7 @@ import Link from "next/link";
 import { FormEvent, ReactNode, useCallback, useEffect, useMemo, useState } from "react";
 
 import { coneChart } from "@/lib/coneReference";
+import { StudioColor, initialStudioColors } from "@/lib/studioColors";
 
 type Tab = {
   id: string;
@@ -22,13 +23,6 @@ type User = {
 
 type KilnType = "manual" | "digital";
 type ManualControl = "switches" | "dial";
-
-type StudioColor = {
-  id: number;
-  name: string;
-  brand: string;
-  retired: boolean;
-};
 
 type Kiln = {
   id: number;
@@ -87,12 +81,6 @@ const initialKilns: Kiln[] = [
   },
 ];
 
-const initialColors: StudioColor[] = [
-  { id: 1, name: "Celadon", brand: "Amaco", retired: false },
-  { id: 2, name: "Shino", brand: "Coyote", retired: false },
-  { id: 3, name: "Tenmoku", brand: "Laguna", retired: true },
-];
-
 export default function AdminPage() {
   const [activeTab, setActiveTab] = useState<string>("users");
   const [users, setUsers] = useState<User[]>(initialUsers);
@@ -112,7 +100,7 @@ export default function AdminPage() {
     dialPositions: [""],
   });
   const [editingKilnId, setEditingKilnId] = useState<number | null>(null);
-  const [colors, setColors] = useState<StudioColor[]>(initialColors);
+  const [colors, setColors] = useState<StudioColor[]>(initialStudioColors);
   const [colorForm, setColorForm] = useState<Omit<StudioColor, "id" | "retired">>({
     name: "",
     brand: "",
