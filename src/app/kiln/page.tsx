@@ -1,7 +1,7 @@
 'use client';
 /* eslint-disable @next/next/no-img-element */
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 
 import { formatDate, formatDateTime } from "@/lib/dateFormat";
@@ -172,16 +172,11 @@ export default function KilnDashboardPage() {
   const [activePhotoIndex, setActivePhotoIndex] = useState<number | null>(null);
   const [galleryTitle, setGalleryTitle] = useState<string>("");
 
-  const readStorageValue = useCallback((key: string) => {
-    if (typeof window === "undefined") return null;
-    return window.localStorage.getItem(key) ?? window.sessionStorage.getItem(key);
-  }, []);
-
   useEffect(() => {
     if (typeof window === "undefined") return;
 
-    const open = readStorageValue("kiln-open-firings");
-    const history = readStorageValue("kiln-firing-history");
+    const open = window.localStorage.getItem("kiln-open-firings");
+    const history = window.localStorage.getItem("kiln-firing-history");
 
     try {
       if (open) {
@@ -225,77 +220,7 @@ export default function KilnDashboardPage() {
     } catch (error) {
       console.error("Unable to parse firing history", error);
     }
-  }, [collectPhotosForFiring, readStorageValue]);
-
-  const collectPhotosForFiring = useCallback(
-    (firingId: string, loadPhotos?: (string | PhotoAsset)[]) => {
-      const unique = new Map<string, PhotoAsset>();
-
-      const addPhotos = (list?: (string | PhotoAsset)[]) => {
-        normalizePhotos(list).forEach((photo) => {
-          const key = `${photo.name}-${photo.src}`;
-          if (!unique.has(key)) {
-            unique.set(key, photo);
-          }
-        });
-      };
-
-      addPhotos(loadPhotos);
-
-      if (typeof window !== "undefined") {
-        ["kiln-open-firing-details", "kiln-firing-history-details"].forEach((key) => {
-          const raw = readStorageValue(key);
-          if (!raw) return;
-          try {
-            const parsed = JSON.parse(raw);
-            const detail = parsed?.[firingId];
-            if (detail?.loadPhotos) {
-              addPhotos(detail.loadPhotos);
-            }
-          } catch (error) {
-            console.error(`Unable to parse ${key} for photos`, error);
-          }
-        });
-
-        const eventsRaw = readStorageValue(`firing-${firingId}-events`);
-        if (eventsRaw) {
-          try {
-            const events = JSON.parse(eventsRaw);
-            events.forEach((event: any) => addPhotos(event.photos));
-          } catch (error) {
-            console.error("Unable to parse stored firing events for photos", error);
-          }
-        }
-      }
-
-      return Array.from(unique.values());
-    },
-    [readStorageValue],
-  );
-
-  const openGalleryForFiring = (firingId: string, loadPhotos: (string | PhotoAsset)[] | undefined, title: string) => {
-    const photos = collectPhotosForFiring(firingId, loadPhotos);
-    if (photos.length === 0) return;
-    setGalleryPhotos(photos);
-    setActivePhotoIndex(0);
-    setGalleryTitle(title);
-  };
-
-  const closeGallery = () => {
-    setActivePhotoIndex(null);
-    setGalleryPhotos([]);
-    setGalleryTitle("");
-  };
-
-  const showNextPhoto = () => {
-    if (activePhotoIndex === null || galleryPhotos.length === 0) return;
-    setActivePhotoIndex((prev) => (prev === null ? prev : (prev + 1) % galleryPhotos.length));
-  };
-
-  const showPreviousPhoto = () => {
-    if (activePhotoIndex === null || galleryPhotos.length === 0) return;
-    setActivePhotoIndex((prev) => (prev === null ? prev : (prev - 1 + galleryPhotos.length) % galleryPhotos.length));
-  };
+  }, []);
 
   const collectPhotosForFiring = (firingId: string, loadPhotos?: (string | PhotoAsset)[]) => {
     const unique = new Map<string, PhotoAsset>();

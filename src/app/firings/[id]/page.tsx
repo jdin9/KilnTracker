@@ -168,7 +168,7 @@ const nowLocal = () => {
 const getStoredFiring = (id: string): Firing | null => {
   if (typeof window === "undefined") return null;
 
-  const detailedStore = readStorageValue(OPEN_DETAIL_KEY);
+  const detailedStore = window.localStorage.getItem(OPEN_DETAIL_KEY);
   if (detailedStore) {
     try {
       const parsed = JSON.parse(detailedStore);
@@ -178,7 +178,7 @@ const getStoredFiring = (id: string): Firing | null => {
     }
   }
 
-  const open = readStorageValue("kiln-open-firings");
+  const open = window.localStorage.getItem("kiln-open-firings");
   const parsed = open ? JSON.parse(open) : [];
   const match = parsed.find((item: any) => item.id === id);
   if (!match) return null;
@@ -199,7 +199,7 @@ const getStoredFiring = (id: string): Firing | null => {
 const getStoredHistoryFiring = (id: string): Firing | null => {
   if (typeof window === "undefined") return null;
 
-  const historyDetailStore = readStorageValue(HISTORY_DETAIL_KEY);
+  const historyDetailStore = window.localStorage.getItem(HISTORY_DETAIL_KEY);
   if (historyDetailStore) {
     try {
       const parsed = JSON.parse(historyDetailStore);
@@ -209,7 +209,7 @@ const getStoredHistoryFiring = (id: string): Firing | null => {
     }
   }
 
-  const history = readStorageValue("kiln-firing-history");
+  const history = window.localStorage.getItem("kiln-firing-history");
   const parsed = history ? JSON.parse(history) : [];
   const match = parsed.find((item: any) => item.id === id);
   if (!match) return null;
@@ -251,11 +251,6 @@ const safePersist = (key: string, value: string) => {
       console.warn(`Unable to persist ${key} to sessionStorage`, sessionError);
     }
   }
-};
-
-const readStorageValue = (key: string) => {
-  if (typeof window === "undefined") return null;
-  return window.localStorage.getItem(key) ?? window.sessionStorage.getItem(key);
 };
 
 const normalizePhotos = (photos?: (string | PhotoAsset)[]) => {
@@ -326,7 +321,7 @@ export default function FiringDetailPage({ params }: { params: { id: string } })
     }
 
     if (typeof window !== "undefined") {
-      const storedEvents = readStorageValue(`firing-${params.id}-events`);
+      const storedEvents = window.localStorage.getItem(`firing-${params.id}-events`);
       if (storedEvents) {
         try {
           const parsed: Activity[] = JSON.parse(storedEvents);
@@ -501,19 +496,19 @@ export default function FiringDetailPage({ params }: { params: { id: string } })
       setFiring(updatedFiring);
 
       if (typeof window !== "undefined") {
-        const open = readStorageValue("kiln-open-firings");
+        const open = window.localStorage.getItem("kiln-open-firings");
         const parsed = open ? JSON.parse(open) : [];
         const remaining = parsed.filter((item: any) => item.id !== firing.id);
         safePersist("kiln-open-firings", JSON.stringify(remaining));
 
-        const openDetailRaw = readStorageValue(OPEN_DETAIL_KEY);
+        const openDetailRaw = window.localStorage.getItem(OPEN_DETAIL_KEY);
         const openDetails = openDetailRaw ? JSON.parse(openDetailRaw) : {};
         if (openDetails[firing.id]) {
           delete openDetails[firing.id];
           safePersist(OPEN_DETAIL_KEY, JSON.stringify(openDetails));
         }
 
-        const historyDetailRaw = readStorageValue(HISTORY_DETAIL_KEY);
+        const historyDetailRaw = window.localStorage.getItem(HISTORY_DETAIL_KEY);
         const historyDetails = historyDetailRaw ? JSON.parse(historyDetailRaw) : {};
         const closedDetail: Firing = {
           ...firing,
@@ -530,7 +525,7 @@ export default function FiringDetailPage({ params }: { params: { id: string } })
           }),
         );
 
-        const history = readStorageValue("kiln-firing-history");
+        const history = window.localStorage.getItem("kiln-firing-history");
         const historyParsed = history ? JSON.parse(history) : [];
         safePersist(
           "kiln-firing-history",
