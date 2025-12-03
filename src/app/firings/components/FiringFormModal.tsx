@@ -3,6 +3,8 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 
+import { getConeTemperature } from "@/lib/coneReference";
+
 // TODO: replace with real tRPC mutation (e.g., trpc.firing.create.useMutation)
 const useCreateFiring = () => ({
   mutateAsync: async (input: any) => {
@@ -161,11 +163,13 @@ export function FiringFormModal({ open, onClose, mode = "create", initialData }:
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    const targetTemp = getConeTemperature(form.targetCone);
     const res = await createFiring.mutateAsync({
       kiln_id: form.kilnId,
       firing_type: form.firingType,
       target_cone: form.targetCone,
-      target_temp: undefined,
+      target_temp: targetTemp,
       fill_level: form.fillLevel,
       outside_temp_start: form.outsideTempStart ? Number(form.outsideTempStart) : undefined,
       start_time: new Date(form.startTime).toISOString(),
@@ -176,7 +180,7 @@ export function FiringFormModal({ open, onClose, mode = "create", initialData }:
     persistOpenFiring({
       id: res.id,
       target_cone: form.targetCone,
-      target_temp: undefined,
+      target_temp: targetTemp,
       start_time: new Date(form.startTime).toISOString(),
     });
 

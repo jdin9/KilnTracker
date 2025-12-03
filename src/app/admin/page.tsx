@@ -1,7 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { FormEvent, ReactNode, useEffect, useMemo, useState } from "react";
+import { FormEvent, ReactNode, useCallback, useEffect, useMemo, useState } from "react";
+
+import { coneChart } from "@/lib/coneReference";
 
 type Tab = {
   id: string;
@@ -63,41 +65,6 @@ const initialUsers: User[] = [
   },
 ];
 
-const coneChart = [
-  { cone: "10", temperatureF: 2381 },
-  { cone: "9", temperatureF: 2336 },
-  { cone: "8", temperatureF: 2305 },
-  { cone: "7", temperatureF: 2264 },
-  { cone: "6", temperatureF: 2232 },
-  { cone: "5", temperatureF: 2194 },
-  { cone: "4", temperatureF: 2157 },
-  { cone: "3", temperatureF: 2134 },
-  { cone: "2", temperatureF: 2124 },
-  { cone: "1", temperatureF: 2118 },
-  { cone: "01", temperatureF: 2084 },
-  { cone: "02", temperatureF: 2068 },
-  { cone: "03", temperatureF: 2052 },
-  { cone: "04", temperatureF: 2030 },
-  { cone: "05", temperatureF: 2014 },
-  { cone: "06", temperatureF: 1940 },
-  { cone: "07", temperatureF: 1888 },
-  { cone: "08", temperatureF: 1830 },
-  { cone: "09", temperatureF: 1789 },
-  { cone: "010", temperatureF: 1753 },
-  { cone: "011", temperatureF: 1693 },
-  { cone: "012", temperatureF: 1673 },
-  { cone: "013", temperatureF: 1641 },
-  { cone: "014", temperatureF: 1623 },
-  { cone: "015", temperatureF: 1607 },
-  { cone: "016", temperatureF: 1566 },
-  { cone: "017", temperatureF: 1540 },
-  { cone: "018", temperatureF: 1450 },
-  { cone: "019", temperatureF: 1377 },
-  { cone: "020", temperatureF: 1323 },
-  { cone: "021", temperatureF: 1261 },
-  { cone: "022", temperatureF: 1180 },
-];
-
 const initialKilns: Kiln[] = [
   {
     id: 1,
@@ -151,10 +118,10 @@ export default function AdminPage() {
     brand: "",
   });
 
-  const resetForm = () => {
+  const resetForm = useCallback(() => {
     setForm({ firstName: "", lastName: "", username: "", password: "" });
     setEditingId(null);
-  };
+  }, []);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -176,26 +143,29 @@ export default function AdminPage() {
     window.localStorage.setItem(KILN_STORAGE_KEY, JSON.stringify(kilns));
   }, [kilns]);
 
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
+  const handleSubmit = useCallback(
+    (event: FormEvent<HTMLFormElement>) => {
+      event.preventDefault();
 
-    if (!form.firstName || !form.lastName || !form.username || !form.password) {
-      return;
-    }
+      if (!form.firstName || !form.lastName || !form.username || !form.password) {
+        return;
+      }
 
-    if (editingId) {
-      setUsers((prev) =>
-        prev.map((user) => (user.id === editingId ? { ...user, ...form } : user))
-      );
-    } else {
-      const nextId = users.length ? Math.max(...users.map((user) => user.id)) + 1 : 1;
-      setUsers((prev) => [...prev, { id: nextId, ...form }]);
-    }
+      if (editingId) {
+        setUsers((prev) =>
+          prev.map((user) => (user.id === editingId ? { ...user, ...form } : user))
+        );
+      } else {
+        const nextId = users.length ? Math.max(...users.map((user) => user.id)) + 1 : 1;
+        setUsers((prev) => [...prev, { id: nextId, ...form }]);
+      }
 
-    resetForm();
-  };
+      resetForm();
+    },
+    [editingId, form, resetForm, users]
+  );
 
-  const startEdit = (user: User) => {
+  const startEdit = useCallback((user: User) => {
     setEditingId(user.id);
     setForm({
       firstName: user.firstName,
@@ -203,9 +173,9 @@ export default function AdminPage() {
       username: user.username,
       password: user.password,
     });
-  };
+  }, []);
 
-  const resetKilnForm = () => {
+  const resetKilnForm = useCallback(() => {
     setKilnForm({
       nickname: "",
       type: "digital",
@@ -214,41 +184,44 @@ export default function AdminPage() {
       dialPositions: [""],
     });
     setEditingKilnId(null);
-  };
+  }, []);
 
-  const handleKilnSubmit = (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
+  const handleKilnSubmit = useCallback(
+    (event: FormEvent<HTMLFormElement>) => {
+      event.preventDefault();
 
-    if (!kilnForm.nickname || !kilnForm.type) {
-      return;
-    }
+      if (!kilnForm.nickname || !kilnForm.type) {
+        return;
+      }
 
-    const payload: Omit<Kiln, "id"> = {
-      ...kilnForm,
-      manualControl: kilnForm.type === "manual" ? kilnForm.manualControl : undefined,
-      switches:
-        kilnForm.type === "manual" && kilnForm.manualControl === "switches"
-          ? kilnForm.switches
-          : undefined,
-      dialPositions:
-        kilnForm.type === "manual" && kilnForm.manualControl === "dial"
-          ? (kilnForm.dialPositions ?? []).filter((position) => position.trim().length > 0)
-          : undefined,
-    };
+      const payload: Omit<Kiln, "id"> = {
+        ...kilnForm,
+        manualControl: kilnForm.type === "manual" ? kilnForm.manualControl : undefined,
+        switches:
+          kilnForm.type === "manual" && kilnForm.manualControl === "switches"
+            ? kilnForm.switches
+            : undefined,
+        dialPositions:
+          kilnForm.type === "manual" && kilnForm.manualControl === "dial"
+            ? (kilnForm.dialPositions ?? []).filter((position) => position.trim().length > 0)
+            : undefined,
+      };
 
-    if (editingKilnId) {
-      setKilns((prev) =>
-        prev.map((kiln) => (kiln.id === editingKilnId ? { ...kiln, ...payload } : kiln))
-      );
-    } else {
-      const nextId = kilns.length ? Math.max(...kilns.map((kiln) => kiln.id)) + 1 : 1;
-      setKilns((prev) => [...prev, { id: nextId, ...payload }]);
-    }
+      if (editingKilnId) {
+        setKilns((prev) =>
+          prev.map((kiln) => (kiln.id === editingKilnId ? { ...kiln, ...payload } : kiln))
+        );
+      } else {
+        const nextId = kilns.length ? Math.max(...kilns.map((kiln) => kiln.id)) + 1 : 1;
+        setKilns((prev) => [...prev, { id: nextId, ...payload }]);
+      }
 
-    resetKilnForm();
-  };
+      resetKilnForm();
+    },
+    [editingKilnId, kilnForm, kilns, resetKilnForm]
+  );
 
-  const startKilnEdit = (kiln: Kiln) => {
+  const startKilnEdit = useCallback((kiln: Kiln) => {
     setEditingKilnId(kiln.id);
     setKilnForm({
       nickname: kiln.nickname,
@@ -257,7 +230,7 @@ export default function AdminPage() {
       switches: kiln.switches ?? 3,
       dialPositions: kiln.dialPositions?.length ? kiln.dialPositions : [""],
     });
-  };
+  }, []);
 
   const usersContent = useMemo(
     () => (
@@ -393,7 +366,7 @@ export default function AdminPage() {
         </div>
       </div>
     ),
-    [users, form, editingId]
+    [users, form, editingId, handleSubmit, startEdit, resetForm]
   );
 
   const kilnContent = useMemo(
@@ -713,7 +686,7 @@ export default function AdminPage() {
         </div>
       </div>
     ),
-    [kilns, kilnForm, editingKilnId]
+    [kilns, kilnForm, editingKilnId, handleKilnSubmit, startKilnEdit, resetKilnForm]
   );
 
   const potteryContent = (
