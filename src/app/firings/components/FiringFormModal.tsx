@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 
 // TODO: replace with real tRPC mutation (e.g., trpc.firing.create.useMutation)
@@ -26,11 +26,15 @@ type FiringFormModalProps = {
   }>;
 };
 
-const kilnOptions = [
-  { id: "k1", name: "Big Manual Kiln", model: "Skutt KM1227", location: "Studio North" },
-  { id: "k2", name: "Studio Test Kiln", model: "Manual Dial", location: "Studio Annex" },
-  { id: "k3", name: "Electric Kiln", model: "Olympic", location: "Studio Back" },
+type KilnOption = { id: string; name: string; model: string; location: string };
+
+const defaultKilnOptions: KilnOption[] = [
+  { id: "1", name: "Studio Workhorse", model: "Digital controller", location: "Studio" },
+  { id: "2", name: "Manual Test Kiln", model: "Manual switches kiln", location: "Studio" },
+  { id: "3", name: "Glaze Trials", model: "Manual dial kiln", location: "Studio" },
 ];
+
+const KILN_STORAGE_KEY = "kiln-definitions";
 
 const coneOptions = ["022", "018", "06", "05", "04", "03", "02", "01", "1", "2", "4", "5", "6", "8", "10"];
 
@@ -59,8 +63,36 @@ export function FiringFormModal({ open, onClose, mode = "create", initialData }:
   const router = useRouter();
   const createFiring = useCreateFiring();
 
+  const [kilnOptions, setKilnOptions] = useState<KilnOption[]>(defaultKilnOptions);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const storedKilns = window.localStorage.getItem(KILN_STORAGE_KEY);
+    if (!storedKilns) return;
+
+    try {
+      const parsed = JSON.parse(storedKilns);
+      if (Array.isArray(parsed) && parsed.length) {
+        const mapped = parsed.map((kiln: any, index: number): KilnOption => ({
+          id: kiln.id ? kiln.id.toString() : `kiln-${index + 1}`,
+          name: kiln.nickname ?? "Unnamed kiln",
+          model:
+            kiln.type === "digital"
+              ? "Digital controller"
+              : kiln.manualControl === "switches"
+                ? "Manual switches kiln"
+                : "Manual dial kiln",
+          location: "Studio",
+        }));
+        setKilnOptions(mapped);
+      }
+    } catch (error) {
+      console.error("Failed to read kiln definitions", error);
+    }
+  }, []);
+
   const [form, setForm] = useState({
-    kilnId: initialData?.kilnId ?? kilnOptions[0]?.id ?? "",
+    kilnId: initialData?.kilnId ?? defaultKilnOptions[0]?.id ?? "",
     firingType: initialData?.firingType ?? "bisque",
     targetCone: initialData?.targetCone ?? coneOptions[5],
     fillLevel: initialData?.fillLevel ?? fillLevels[0].value,
@@ -71,6 +103,16 @@ export function FiringFormModal({ open, onClose, mode = "create", initialData }:
   });
 
   const coneChoices = useMemo(() => coneOptions, []);
+
+  useEffect(() => {
+    if (!kilnOptions.length) return;
+    setForm((prev) => {
+      if (prev.kilnId && kilnOptions.some((kiln) => kiln.id === prev.kilnId)) {
+        return prev;
+      }
+      return { ...prev, kilnId: kilnOptions[0].id };
+    });
+  }, [kilnOptions]);
 
   const persistOpenFiring = (payload: any) => {
     if (typeof window === "undefined") return;
@@ -302,10 +344,10 @@ export function FiringFormModal({ open, onClose, mode = "create", initialData }:
               />
             </div>
 
-            <div className="flex items-center justify-between rounded-xl border border-blue-100 bg-blue-50 px-4 py-3 text-sm text-blue-900 shadow-inner">
+              <div className="flex items-center justify-between rounded-xl border border-blue-100 bg-blue-50 px-4 py-3 text-sm text-blue-900 shadow-inner">
               <div>
                 <div className="font-medium">Ready to {mode === "create" ? "start" : "save"}?</div>
-                <p className="text-xs text-blue-800">We\'ll save this firing and take you to the activity timeline.</p>
+                <p className="text-xs text-blue-800">We’ll save this firing and take you to the activity timeline.</p>
               </div>
               <button
                 type="submit"

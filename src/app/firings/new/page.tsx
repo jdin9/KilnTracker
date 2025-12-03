@@ -21,7 +21,7 @@ export default function NewFiringPage() {
           <p className="text-sm uppercase tracking-[0.3em] text-blue-300/80">Firing workspace</p>
           <h1 className="text-3xl font-semibold">Start or update a firing without leaving your flow</h1>
           <p className="text-slate-300">
-            The new modal experience keeps kiln setup close at hand. Close the window when you\'re done to go back to the
+            The new modal experience keeps kiln setup close at hand. Close the window when you’re done to go back to the
             firing list.
           </p>
         </div>
