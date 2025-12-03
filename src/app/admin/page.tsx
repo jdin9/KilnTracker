@@ -33,6 +33,11 @@ type Kiln = {
   dialPositions?: string[];
 };
 
+type ClayBody = {
+  id: number;
+  name: string;
+};
+
 const KILN_STORAGE_KEY = "kiln-admin-kilns";
 
 const initialUsers: User[] = [
@@ -81,6 +86,12 @@ const initialKilns: Kiln[] = [
   },
 ];
 
+const initialClayBodies: ClayBody[] = [
+  { id: 1, name: "Stoneware 266" },
+  { id: 2, name: "Porcelain P10" },
+  { id: 3, name: "Speckled Buff" },
+];
+
 export default function AdminPage() {
   const [activeTab, setActiveTab] = useState<string>("users");
   const [users, setUsers] = useState<User[]>(initialUsers);
@@ -105,6 +116,8 @@ export default function AdminPage() {
     name: "",
     brand: "",
   });
+  const [clayBodies, setClayBodies] = useState<ClayBody[]>(initialClayBodies);
+  const [clayBodyForm, setClayBodyForm] = useState<string>("");
 
   const resetForm = useCallback(() => {
     setForm({ firstName: "", lastName: "", username: "", password: "" });
@@ -693,6 +706,41 @@ export default function AdminPage() {
         <div className="overflow-hidden rounded-2xl border border-purple-100 bg-white shadow-sm">
           <div className="flex items-center justify-between border-b border-purple-100 px-4 py-3">
             <div>
+              <p className="text-xs font-semibold uppercase tracking-wide text-purple-700">Clay bodies</p>
+              <h3 className="text-lg font-bold text-gray-900">Studio clay library</h3>
+              <p className="text-sm text-gray-600">Track which clay bodies are currently on hand.</p>
+            </div>
+          </div>
+          <div className="grid grid-cols-2 bg-purple-50/60 px-4 py-3 text-xs font-semibold uppercase tracking-wide text-purple-800">
+            <span>Clay body</span>
+            <span className="text-right">Actions</span>
+          </div>
+          <ul className="divide-y divide-purple-100">
+            {clayBodies.map((clayBody) => (
+              <li key={clayBody.id} className="grid grid-cols-2 items-center px-4 py-3 text-sm text-gray-800">
+                <span className="font-semibold">{clayBody.name}</span>
+                <div className="flex justify-end gap-2">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setClayBodies((prev) => prev.filter((entry) => entry.id !== clayBody.id))
+                    }
+                    className="rounded-full border border-purple-200 px-3 py-1 text-xs font-semibold text-purple-700 transition hover:bg-purple-50"
+                  >
+                    Remove
+                  </button>
+                </div>
+              </li>
+            ))}
+            {clayBodies.length === 0 && (
+              <li className="px-4 py-6 text-sm text-gray-600">No clay bodies added yet.</li>
+            )}
+          </ul>
+        </div>
+
+        <div className="overflow-hidden rounded-2xl border border-purple-100 bg-white shadow-sm">
+          <div className="flex items-center justify-between border-b border-purple-100 px-4 py-3">
+            <div>
               <p className="text-xs font-semibold uppercase tracking-wide text-purple-700">Active colours</p>
               <h3 className="text-lg font-bold text-gray-900">Current studio palette</h3>
               <p className="text-sm text-gray-600">Retire colours to move them into the archive.</p>
@@ -769,66 +817,104 @@ export default function AdminPage() {
         </div>
       </div>
 
-      <div className="rounded-3xl border border-purple-100 bg-purple-50 p-6 shadow-inner">
-        <h3 className="text-lg font-semibold text-gray-900">Add a new colour</h3>
-        <p className="mt-1 text-sm text-gray-600">
-          Capture the glaze name and brand, then add it to the active studio list.
-        </p>
-        <form
-          className="mt-4 space-y-3"
-          onSubmit={(event: FormEvent<HTMLFormElement>) => {
-            event.preventDefault();
-            if (!colorForm.name || !colorForm.brand) return;
-            const nextId = colors.length ? Math.max(...colors.map((color) => color.id)) + 1 : 1;
-            setColors((prev) => [...prev, { id: nextId, ...colorForm, retired: false }]);
-            setColorForm({ name: "", brand: "" });
-          }}
-        >
-          <div className="space-y-1">
-            <label className="text-sm font-semibold text-gray-800" htmlFor="color-name">
-              Colour Name
-            </label>
-            <input
-              id="color-name"
-              name="color-name"
-              value={colorForm.name}
-              onChange={(event) => setColorForm((prev) => ({ ...prev, name: event.target.value }))}
-              className="w-full rounded-xl border border-purple-200 bg-white px-3 py-2 text-sm shadow-inner focus:border-purple-400 focus:outline-none"
-              placeholder="Frost Blue"
-              required
-            />
-          </div>
-          <div className="space-y-1">
-            <label className="text-sm font-semibold text-gray-800" htmlFor="color-brand">
-              Brand
-            </label>
-            <input
-              id="color-brand"
-              name="color-brand"
-              value={colorForm.brand}
-              onChange={(event) => setColorForm((prev) => ({ ...prev, brand: event.target.value }))}
-              className="w-full rounded-xl border border-purple-200 bg-white px-3 py-2 text-sm shadow-inner focus:border-purple-400 focus:outline-none"
-              placeholder="Amaco"
-              required
-            />
-          </div>
-          <div className="flex items-center gap-2 pt-2">
+        <div className="rounded-3xl border border-purple-100 bg-purple-50 p-6 shadow-inner">
+          <h3 className="text-lg font-semibold text-gray-900">Add a clay body</h3>
+          <p className="mt-1 text-sm text-gray-600">Capture clay bodies to keep an inventory of what you use.</p>
+          <form
+            className="mt-4 space-y-3"
+            onSubmit={(event: FormEvent<HTMLFormElement>) => {
+              event.preventDefault();
+              if (!clayBodyForm.trim()) return;
+              const nextId = clayBodies.length
+                ? Math.max(...clayBodies.map((clayBody) => clayBody.id)) + 1
+                : 1;
+              setClayBodies((prev) => [...prev, { id: nextId, name: clayBodyForm.trim() }]);
+              setClayBodyForm("");
+            }}
+          >
+            <div className="space-y-1">
+              <label className="text-sm font-semibold text-gray-800" htmlFor="clay-body-name">
+                Clay body name
+              </label>
+              <input
+                id="clay-body-name"
+                name="clay-body-name"
+                value={clayBodyForm}
+                onChange={(event) => setClayBodyForm(event.target.value)}
+                className="w-full rounded-xl border border-purple-200 bg-white px-3 py-2 text-sm shadow-inner focus:border-purple-400 focus:outline-none"
+                placeholder="e.g. B-Mix"
+                required
+              />
+            </div>
             <button
               type="submit"
-              className="flex-1 rounded-full bg-purple-600 px-4 py-2 text-sm font-semibold text-white shadow-md transition hover:bg-purple-700"
+              className="w-full rounded-full bg-purple-600 px-4 py-2 text-sm font-semibold text-white shadow-md transition hover:bg-purple-700"
             >
-              Add colour
+              Add clay body
             </button>
-            <button
-              type="button"
-              onClick={() => setColorForm({ name: "", brand: "" })}
-              className="rounded-full border border-purple-200 px-4 py-2 text-sm font-semibold text-purple-700 transition hover:bg-purple-50"
-            >
-              Clear
-            </button>
-          </div>
-        </form>
-      </div>
+          </form>
+
+          <div className="mt-8 h-px w-full bg-purple-200/70" />
+
+          <h3 className="text-lg font-semibold text-gray-900">Add a new colour</h3>
+          <p className="mt-1 text-sm text-gray-600">
+            Capture the glaze name and brand, then add it to the active studio list.
+          </p>
+          <form
+            className="mt-4 space-y-3"
+            onSubmit={(event: FormEvent<HTMLFormElement>) => {
+              event.preventDefault();
+              if (!colorForm.name || !colorForm.brand) return;
+              const nextId = colors.length ? Math.max(...colors.map((color) => color.id)) + 1 : 1;
+              setColors((prev) => [...prev, { id: nextId, ...colorForm, retired: false }]);
+              setColorForm({ name: "", brand: "" });
+            }}
+          >
+            <div className="space-y-1">
+              <label className="text-sm font-semibold text-gray-800" htmlFor="color-name">
+                Colour Name
+              </label>
+              <input
+                id="color-name"
+                name="color-name"
+                value={colorForm.name}
+                onChange={(event) => setColorForm((prev) => ({ ...prev, name: event.target.value }))}
+                className="w-full rounded-xl border border-purple-200 bg-white px-3 py-2 text-sm shadow-inner focus:border-purple-400 focus:outline-none"
+                placeholder="Frost Blue"
+                required
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="text-sm font-semibold text-gray-800" htmlFor="color-brand">
+                Brand
+              </label>
+              <input
+                id="color-brand"
+                name="color-brand"
+                value={colorForm.brand}
+                onChange={(event) => setColorForm((prev) => ({ ...prev, brand: event.target.value }))}
+                className="w-full rounded-xl border border-purple-200 bg-white px-3 py-2 text-sm shadow-inner focus:border-purple-400 focus:outline-none"
+                placeholder="Amaco"
+                required
+              />
+            </div>
+            <div className="flex items-center gap-2 pt-2">
+              <button
+                type="submit"
+                className="flex-1 rounded-full bg-purple-600 px-4 py-2 text-sm font-semibold text-white shadow-md transition hover:bg-purple-700"
+              >
+                Add colour
+              </button>
+              <button
+                type="button"
+                onClick={() => setColorForm({ name: "", brand: "" })}
+                className="rounded-full border border-purple-200 px-4 py-2 text-sm font-semibold text-purple-700 transition hover:bg-purple-50"
+              >
+                Clear
+              </button>
+            </div>
+          </form>
+        </div>
     </div>
   );
 
@@ -848,7 +934,7 @@ export default function AdminPage() {
     {
       id: "pottery",
       label: "Pottery",
-      summary: "Add and archive studio glaze colors.",
+      summary: "Add and archive studio glaze colors and clay bodies.",
       content: potteryContent,
     },
   ];
