@@ -239,6 +239,20 @@ const resolvePhotoUrl = (photo: string, index = 0) => {
   return `data:image/svg+xml,${encodeURIComponent(svg)}`;
 };
 
+const safePersist = (key: string, value: string) => {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(key, value);
+  } catch (error) {
+    console.warn(`Unable to persist ${key} to localStorage`, error);
+    try {
+      window.sessionStorage.setItem(key, value);
+    } catch (sessionError) {
+      console.warn(`Unable to persist ${key} to sessionStorage`, sessionError);
+    }
+  }
+};
+
 const normalizePhotos = (photos?: (string | PhotoAsset)[]) => {
   if (!photos || photos.length === 0) return [] as PhotoAsset[];
   return photos.map((photo, index) => {
@@ -336,7 +350,7 @@ export default function FiringDetailPage({ params }: { params: { id: string } })
 
   useEffect(() => {
     if (typeof window === "undefined") return;
-    window.localStorage.setItem(`firing-${params.id}-events`, JSON.stringify(activities));
+    safePersist(`firing-${params.id}-events`, JSON.stringify(activities));
   }, [activities, params.id]);
 
   useEffect(() => {
@@ -485,13 +499,13 @@ export default function FiringDetailPage({ params }: { params: { id: string } })
         const open = window.localStorage.getItem("kiln-open-firings");
         const parsed = open ? JSON.parse(open) : [];
         const remaining = parsed.filter((item: any) => item.id !== firing.id);
-        window.localStorage.setItem("kiln-open-firings", JSON.stringify(remaining));
+        safePersist("kiln-open-firings", JSON.stringify(remaining));
 
         const openDetailRaw = window.localStorage.getItem(OPEN_DETAIL_KEY);
         const openDetails = openDetailRaw ? JSON.parse(openDetailRaw) : {};
         if (openDetails[firing.id]) {
           delete openDetails[firing.id];
-          window.localStorage.setItem(OPEN_DETAIL_KEY, JSON.stringify(openDetails));
+          safePersist(OPEN_DETAIL_KEY, JSON.stringify(openDetails));
         }
 
         const historyDetailRaw = window.localStorage.getItem(HISTORY_DETAIL_KEY);
@@ -503,7 +517,7 @@ export default function FiringDetailPage({ params }: { params: { id: string } })
           maxTemp: activity.pyrometerTemp ?? firing.maxTemp,
           loadPhotos: allPhotos,
         };
-        window.localStorage.setItem(
+        safePersist(
           HISTORY_DETAIL_KEY,
           JSON.stringify({
             ...historyDetails,
@@ -513,7 +527,7 @@ export default function FiringDetailPage({ params }: { params: { id: string } })
 
         const history = window.localStorage.getItem("kiln-firing-history");
         const historyParsed = history ? JSON.parse(history) : [];
-        window.localStorage.setItem(
+        safePersist(
           "kiln-firing-history",
           JSON.stringify([
             ...historyParsed,
