@@ -12,7 +12,7 @@ type Activity = {
   type: ActivityType;
   note?: string;
   pyrometerTemp?: number;
-  dialPosition?: "low" | "medium" | "high";
+  dialPosition?: string;
   switchName?: string;
   switchState?: string;
   photos?: string[];
@@ -34,6 +34,22 @@ type Firing = {
   pieces?: { name: string; notes?: string }[];
   notes?: string;
 };
+
+type Kiln = {
+  id: number;
+  nickname: string;
+  type: "manual" | "digital";
+  manualControl?: "switches" | "dial";
+  switches?: number;
+  dialPositions?: string[];
+};
+
+const KILNS_STORAGE_KEY = "kiln-admin-kilns";
+const defaultKilns: Kiln[] = [
+  { id: 1, nickname: "Studio Workhorse", type: "digital" },
+  { id: 2, nickname: "Manual Test Kiln", type: "manual", manualControl: "switches", switches: 3 },
+  { id: 3, nickname: "Glaze Trials", type: "manual", manualControl: "dial", dialPositions: ["Low", "Medium", "High"] },
+];
 
 const mockFiring: Firing = {
   id: "1",
@@ -206,17 +222,19 @@ const getStoredHistoryFiring = (id: string): Firing | null => {
 
 export default function FiringDetailPage({ params }: { params: { id: string } }) {
   const [firing, setFiring] = useState<Firing | null>(null);
+  const [kilnConfig, setKilnConfig] = useState<Kiln | null>(null);
   const [activities, setActivities] = useState<Activity[]>([]);
   const [loading, setLoading] = useState(true);
   const [form, setForm] = useState({
-    type: "dial" as ActivityType,
     timestamp: nowLocal(),
-    dialPosition: "low" as "low" | "medium" | "high",
+    dialPosition: "",
     switchName: "",
-    switchState: "off",
+    switchState: "on",
     pyrometerTemp: "",
     note: "",
     photos: [] as File[],
+    shutdown: false,
+    closeFiring: false,
   });
 
   useEffect(() => {
@@ -226,6 +244,22 @@ export default function FiringDetailPage({ params }: { params: { id: string } })
     const resolvedFiring = fromOpen ?? fromHistory ?? fallbackHistory?.firing ?? (params.id === mockFiring.id ? mockFiring : null);
     setFiring(resolvedFiring);
     setLoading(false);
+
+    if (typeof window !== "undefined") {
+      const storedKilns = window.localStorage.getItem(KILNS_STORAGE_KEY);
+      let kilnsSource: Kiln[] = defaultKilns;
+
+      if (storedKilns) {
+        try {
+          kilnsSource = JSON.parse(storedKilns);
+        } catch (error) {
+          console.error("Unable to parse stored kiln configurations", error);
+        }
+      }
+
+      const match = kilnsSource.find((kiln) => kiln.nickname === resolvedFiring?.kilnName);
+      if (match) setKilnConfig(match);
+    }
 
     if (typeof window !== "undefined") {
       const storedEvents = window.localStorage.getItem(`firing-${params.id}-events`);
@@ -249,6 +283,32 @@ export default function FiringDetailPage({ params }: { params: { id: string } })
     window.localStorage.setItem(`firing-${params.id}-events`, JSON.stringify(activities));
   }, [activities, params.id]);
 
+  useEffect(() => {
+    if (kilnConfig?.manualControl === "dial") {
+      const firstPosition = kilnConfig.dialPositions?.find((position) => position.trim().length > 0) ?? "";
+      if (firstPosition && !form.dialPosition) {
+        setForm((prev) => ({ ...prev, dialPosition: firstPosition }));
+      }
+    }
+  }, [kilnConfig, form.dialPosition]);
+
+  useEffect(() => {
+    if (kilnConfig?.manualControl === "switches") {
+      const firstSwitchLabel = kilnConfig.switches && kilnConfig.switches > 0 ? `Switch 1` : "Switch 1";
+      if (firstSwitchLabel && !form.switchName) {
+        setForm((prev) => ({ ...prev, switchName: firstSwitchLabel, switchState: prev.switchState || "on" }));
+      }
+    }
+  }, [kilnConfig, form.switchName]);
+
+  const isDialKiln = kilnConfig?.type === "manual" && kilnConfig.manualControl === "dial";
+  const isSwitchKiln = kilnConfig?.type === "manual" && kilnConfig.manualControl === "switches";
+  const dialPositionOptions = (kilnConfig?.dialPositions ?? ["Low", "Medium", "High"]).filter(
+    (position) => position.trim().length > 0,
+  );
+  const switchCount = kilnConfig?.switches ?? 0;
+  const switchOptions = switchCount > 0 ? Array.from({ length: switchCount }, (_, index) => `Switch ${index + 1}`) : ["Switch 1"];
+
   const sortedEvents = useMemo(
     () => [...activities].sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()),
     [activities],
@@ -267,7 +327,19 @@ export default function FiringDetailPage({ params }: { params: { id: string } })
 
   const handleAddActivity = (e: React.FormEvent) => {
     e.preventDefault();
-    if (form.type === "shutdown" && !form.pyrometerTemp) {
+    const inferredType: ActivityType = form.closeFiring
+      ? "close"
+      : form.shutdown
+        ? "shutdown"
+        : kilnConfig?.manualControl === "dial" && form.dialPosition
+          ? "dial"
+          : isSwitchKiln && (form.switchName || form.switchState)
+            ? "switch"
+            : form.pyrometerTemp
+              ? "temp"
+              : "note";
+
+    if (inferredType === "shutdown" && !form.pyrometerTemp) {
       alert("Temperature is required when shutting down the kiln.");
       return;
     }
@@ -275,18 +347,18 @@ export default function FiringDetailPage({ params }: { params: { id: string } })
     const activity: Activity = {
       id: `act-${Date.now()}`,
       timestamp: new Date(form.timestamp).toISOString(),
-      type: form.type,
+      type: inferredType,
       note: form.note || undefined,
       pyrometerTemp: form.pyrometerTemp ? Number(form.pyrometerTemp) : undefined,
-      dialPosition: form.type === "dial" ? form.dialPosition : undefined,
-      switchName: form.type === "switch" ? form.switchName || undefined : undefined,
-      switchState: form.type === "switch" ? form.switchState || undefined : undefined,
+      dialPosition: inferredType === "dial" ? form.dialPosition : undefined,
+      switchName: inferredType === "switch" ? form.switchName || undefined : undefined,
+      switchState: inferredType === "switch" ? form.switchState || undefined : undefined,
       photos: form.photos.map((file) => file.name),
     };
 
     setActivities((prev) => [...prev, activity]);
 
-    if (form.type === "close") {
+    if (inferredType === "close") {
       const endTime = new Date(form.timestamp).toISOString();
       const updatedFiring: Firing = {
         ...firing,
@@ -349,7 +421,17 @@ export default function FiringDetailPage({ params }: { params: { id: string } })
       }
     }
 
-    setForm((prev) => ({ ...prev, note: "", pyrometerTemp: "", photos: [], timestamp: nowLocal() }));
+    setForm((prev) => ({
+      ...prev,
+      note: "",
+      pyrometerTemp: "",
+      photos: [],
+      timestamp: nowLocal(),
+      switchName: "",
+      switchState: "on",
+      shutdown: false,
+      closeFiring: false,
+    }));
   };
 
   const handleDelete = (id: string) => {
@@ -465,22 +547,6 @@ export default function FiringDetailPage({ params }: { params: { id: string } })
           {firing.status === "open" && (
             <form className="grid gap-4 lg:grid-cols-5" onSubmit={handleAddActivity}>
               <div className="space-y-1 lg:col-span-2">
-                <label className="block text-sm font-medium">Activity type</label>
-                <select
-                  className="w-full rounded border px-2 py-1"
-                  value={form.type}
-                  onChange={(e) => setForm({ ...form, type: e.target.value as ActivityType })}
-                >
-                  <option value="dial">Dial adjustment</option>
-                  <option value="switch">Switch toggle</option>
-                  <option value="temp">Temperature reading</option>
-                  <option value="note">Note</option>
-                  <option value="shutdown">Turn kiln off</option>
-                  <option value="close">Close firing (no more actions)</option>
-                </select>
-              </div>
-
-              <div className="space-y-1 lg:col-span-3">
                 <label className="block text-sm font-medium">Time</label>
                 <input
                   type="datetime-local"
@@ -492,41 +558,46 @@ export default function FiringDetailPage({ params }: { params: { id: string } })
                 <p className="text-xs text-gray-500">Auto-filled to now; adjust if logging after the fact.</p>
               </div>
 
-              {form.type === "dial" && (
+              {isDialKiln && (
                 <div className="space-y-1">
                   <label className="block text-sm font-medium">Dial position</label>
                   <select
                     className="w-full rounded border px-2 py-1"
                     value={form.dialPosition}
-                    onChange={(e) => setForm({ ...form, dialPosition: e.target.value as "low" | "medium" | "high" })}
+                    onChange={(e) => setForm({ ...form, dialPosition: e.target.value })}
                   >
-                    <option value="low">Low</option>
-                    <option value="medium">Medium</option>
-                    <option value="high">High</option>
+                    {dialPositionOptions.map((position) => (
+                      <option key={position} value={position}>
+                        {position}
+                      </option>
+                    ))}
                   </select>
+                  <p className="text-xs text-gray-500">Options come from kiln settings in admin.</p>
                 </div>
               )}
 
-              {form.type === "switch" && (
+              {isSwitchKiln && (
                 <div className="space-y-1 lg:col-span-2">
                   <label className="block text-sm font-medium">Switch</label>
-                  <input
+                  <select
                     className="w-full rounded border px-2 py-1"
-                    placeholder="e.g. Top element"
                     value={form.switchName}
                     onChange={(e) => setForm({ ...form, switchName: e.target.value })}
-                  />
+                  >
+                    {switchOptions.map((option) => (
+                      <option key={option} value={option}>
+                        {option}
+                      </option>
+                    ))}
+                  </select>
                   <label className="block text-sm font-medium">Position</label>
                   <select
                     className="w-full rounded border px-2 py-1"
                     value={form.switchState}
                     onChange={(e) => setForm({ ...form, switchState: e.target.value })}
                   >
-                    <option value="off">Off</option>
-                    <option value="low">Low</option>
-                    <option value="medium">Medium</option>
-                    <option value="high">High</option>
                     <option value="on">On</option>
+                    <option value="off">Off</option>
                   </select>
                 </div>
               )}
@@ -562,6 +633,29 @@ export default function FiringDetailPage({ params }: { params: { id: string } })
                   onChange={(e) => setForm({ ...form, photos: Array.from(e.target.files ?? []) })}
                 />
                 <p className="text-xs text-gray-500">Attach load photos or document accidents at any time.</p>
+              </div>
+
+              <div className="flex flex-col gap-2 lg:col-span-5 md:flex-row md:items-center md:gap-4">
+                <label className="inline-flex items-center gap-2 text-sm font-medium text-gray-700">
+                  <input
+                    type="checkbox"
+                    checked={form.shutdown}
+                    onChange={(e) =>
+                      setForm({ ...form, shutdown: e.target.checked, closeFiring: e.target.checked ? false : form.closeFiring })
+                    }
+                  />
+                  Mark kiln shut down (logs end temperature)
+                </label>
+                <label className="inline-flex items-center gap-2 text-sm font-medium text-gray-700">
+                  <input
+                    type="checkbox"
+                    checked={form.closeFiring}
+                    onChange={(e) =>
+                      setForm({ ...form, closeFiring: e.target.checked, shutdown: e.target.checked ? false : form.shutdown })
+                    }
+                  />
+                  Close firing (no more actions)
+                </label>
               </div>
 
               <div className="lg:col-span-5">

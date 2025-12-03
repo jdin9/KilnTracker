@@ -37,7 +37,7 @@ type Kiln = {
   dialPositions?: string[];
 };
 
-const KILN_STORAGE_KEY = "kiln-definitions";
+const KILNS_STORAGE_KEY = "kiln-admin-kilns";
 
 const initialUsers: User[] = [
   {
@@ -150,6 +150,23 @@ export default function AdminPage() {
     name: "",
     brand: "",
   });
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const storedKilns = window.localStorage.getItem(KILNS_STORAGE_KEY);
+    if (storedKilns) {
+      try {
+        setKilns(JSON.parse(storedKilns));
+      } catch (error) {
+        console.error("Unable to parse stored kilns", error);
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    window.localStorage.setItem(KILNS_STORAGE_KEY, JSON.stringify(kilns));
+  }, [kilns]);
 
   const resetForm = () => {
     setForm({ firstName: "", lastName: "", username: "", password: "" });
