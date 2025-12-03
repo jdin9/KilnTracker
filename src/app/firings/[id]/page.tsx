@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useMemo, useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
@@ -222,11 +223,17 @@ const getStoredHistoryFiring = (id: string): Firing | null => {
   };
 };
 
+const resolvePhotoUrl = (photo: string) => {
+  if (photo.startsWith("http")) return photo;
+  return `https://placehold.co/1200x800?text=${encodeURIComponent(photo)}`;
+};
+
 export default function FiringDetailPage({ params }: { params: { id: string } }) {
   const [firing, setFiring] = useState<Firing | null>(null);
   const [kilnConfig, setKilnConfig] = useState<Kiln | null>(null);
   const [activities, setActivities] = useState<Activity[]>([]);
   const [loading, setLoading] = useState(true);
+  const [activePhotoIndex, setActivePhotoIndex] = useState<number | null>(null);
   const [form, setForm] = useState({
     timestamp: nowLocal(),
     dialPosition: "",
@@ -316,6 +323,35 @@ export default function FiringDetailPage({ params }: { params: { id: string } })
     () => [...activities].sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()),
     [activities],
   );
+
+  const allPhotos = useMemo(() => {
+    const loadPhotos = firing?.loadPhotos ?? [];
+    const activityPhotos = activities.flatMap((activity) => activity.photos ?? []);
+    return Array.from(new Set([...loadPhotos, ...activityPhotos]));
+  }, [activities, firing?.loadPhotos]);
+
+  const openPhotoAtIndex = (index: number) => {
+    if (index < 0 || index >= allPhotos.length) return;
+    setActivePhotoIndex(index);
+  };
+
+  const closePhotoModal = () => setActivePhotoIndex(null);
+
+  const showNextPhoto = () => {
+    if (activePhotoIndex === null || allPhotos.length === 0) return;
+    setActivePhotoIndex((prev) => {
+      if (prev === null) return prev;
+      return (prev + 1) % allPhotos.length;
+    });
+  };
+
+  const showPreviousPhoto = () => {
+    if (activePhotoIndex === null || allPhotos.length === 0) return;
+    setActivePhotoIndex((prev) => {
+      if (prev === null) return prev;
+      return (prev - 1 + allPhotos.length) % allPhotos.length;
+    });
+  };
 
   if (!firing && !loading) return notFound();
   if (loading) {
@@ -505,14 +541,31 @@ export default function FiringDetailPage({ params }: { params: { id: string } })
             </div>
             <div className="mt-3 flex flex-wrap gap-2">
               {firing.loadPhotos && firing.loadPhotos.length > 0 ? (
-                firing.loadPhotos.map((photo) => (
-                  <span
-                    key={photo}
-                    className="inline-flex items-center rounded-full bg-purple-50 px-3 py-1 text-xs font-semibold text-purple-800 ring-1 ring-purple-100"
-                  >
-                    {photo}
-                  </span>
-                ))
+                <div className="grid w-full grid-cols-2 gap-3 sm:grid-cols-3">
+                  {firing.loadPhotos.map((photo) => {
+                    const galleryIndex = allPhotos.findIndex((name) => name === photo);
+                    return (
+                      <button
+                        key={photo}
+                        type="button"
+                        onClick={() => openPhotoAtIndex(galleryIndex === -1 ? 0 : galleryIndex)}
+                        className="group relative overflow-hidden rounded-2xl border border-purple-100 bg-purple-50/60 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
+                      >
+                        <Image
+                          src={resolvePhotoUrl(photo)}
+                          alt={photo}
+                          width={800}
+                          height={600}
+                          className="h-32 w-full object-cover"
+                          sizes="(min-width: 1024px) 33vw, (min-width: 640px) 45vw, 90vw"
+                        />
+                        <span className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/60 to-transparent px-3 py-2 text-left text-xs font-semibold text-white">
+                          {photo}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
               ) : (
                 <p className="text-sm text-gray-600">No photos logged for this firing.</p>
               )}
@@ -716,7 +769,31 @@ export default function FiringDetailPage({ params }: { params: { id: string } })
                   )}
                   {event.note && <p className="text-sm text-gray-700">{event.note}</p>}
                   {event.photos && event.photos.length > 0 && (
-                    <p className="text-xs text-gray-600">Photos: {event.photos.join(", ")}</p>
+                    <div className="flex flex-wrap gap-2">
+                      {event.photos.map((photo) => {
+                        const galleryIndex = allPhotos.findIndex((name) => name === photo);
+                        return (
+                          <button
+                            key={`${event.id}-${photo}`}
+                            type="button"
+                            onClick={() => openPhotoAtIndex(galleryIndex === -1 ? 0 : galleryIndex)}
+                            className="group relative overflow-hidden rounded-xl border border-purple-100 bg-purple-50/60 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
+                          >
+                            <Image
+                              src={resolvePhotoUrl(photo)}
+                              alt={photo}
+                              width={320}
+                              height={240}
+                              className="h-20 w-28 object-cover"
+                              sizes="120px"
+                            />
+                            <span className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/60 to-transparent px-2 py-1 text-left text-[10px] font-semibold text-white">
+                              {photo}
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
                   )}
                 </div>
                 <div className="flex items-center gap-3">
@@ -740,6 +817,55 @@ export default function FiringDetailPage({ params }: { params: { id: string } })
             )}
           </div>
         </section>
+
+        {activePhotoIndex !== null && allPhotos[activePhotoIndex] && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
+            <div className="relative w-full max-w-5xl rounded-3xl bg-white/95 p-4 shadow-2xl ring-1 ring-purple-200">
+              <div className="absolute right-3 top-3 flex gap-2">
+                <button
+                  type="button"
+                  onClick={showPreviousPhoto}
+                  className="rounded-full bg-purple-100 p-2 text-purple-800 shadow hover:bg-purple-200 disabled:cursor-not-allowed disabled:opacity-50"
+                  disabled={allPhotos.length <= 1}
+                >
+                  ←
+                </button>
+                <button
+                  type="button"
+                  onClick={showNextPhoto}
+                  className="rounded-full bg-purple-100 p-2 text-purple-800 shadow hover:bg-purple-200 disabled:cursor-not-allowed disabled:opacity-50"
+                  disabled={allPhotos.length <= 1}
+                >
+                  →
+                </button>
+                <button
+                  type="button"
+                  onClick={closePhotoModal}
+                  className="rounded-full bg-gray-200 px-3 py-1 text-sm font-semibold text-gray-800 shadow hover:bg-gray-300"
+                >
+                  Close
+                </button>
+              </div>
+
+              <div className="flex flex-col items-center gap-4">
+                <Image
+                  src={resolvePhotoUrl(allPhotos[activePhotoIndex])}
+                  alt={allPhotos[activePhotoIndex]}
+                  width={1200}
+                  height={800}
+                  className="max-h-[70vh] w-full rounded-2xl object-contain"
+                  sizes="(min-width: 1024px) 70vw, 90vw"
+                />
+                <p className="text-sm font-semibold text-gray-800">{allPhotos[activePhotoIndex]}</p>
+                {allPhotos.length > 1 && (
+                  <p className="text-xs text-gray-600">
+                    Photo {activePhotoIndex + 1} of {allPhotos.length}
+                  </p>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </main>
   );
