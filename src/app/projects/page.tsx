@@ -6,6 +6,7 @@ import Link from "next/link";
 import { initialClayBodies } from "@/lib/clayBodies";
 import { formatDate } from "@/lib/dateFormat";
 import { getActiveStudioColors, initialStudioColors } from "@/lib/studioColors";
+import { loadStoredProjects, StoredProject } from "@/lib/projectStorage";
 
 // TODO: replace with real tRPC hooks, e.g., useProjects(filters)
 const mockProjects = [
@@ -48,6 +49,7 @@ export default function ProjectsPage() {
   const [filters, setFilters] = useState<Filters>({ selectedGlazes: [] });
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [glazeDropdownOpen, setGlazeDropdownOpen] = useState(false);
+  const [storedProjects, setStoredProjects] = useState<StoredProject[]>([]);
 
   const clayBodyOptions = useMemo(() => initialClayBodies, []);
   const activeGlazes = useMemo(
@@ -55,11 +57,30 @@ export default function ProjectsPage() {
     []
   );
 
+  React.useEffect(() => {
+    const refreshStoredProjects = () => {
+      setStoredProjects(loadStoredProjects());
+    };
+
+    refreshStoredProjects();
+    window.addEventListener("storage", refreshStoredProjects);
+
+    return () => window.removeEventListener("storage", refreshStoredProjects);
+  }, []);
+
+  const combinedProjects = useMemo(() => {
+    const sortedStored = [...storedProjects].sort(
+      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    );
+
+    return [...sortedStored, ...mockProjects];
+  }, [storedProjects]);
+
   const filteredProjects = useMemo(() => {
-    return mockProjects.filter((project) => {
+    return combinedProjects.filter((project) => {
       const matchesSearch = filters.search
         ? project.title.toLowerCase().includes(filters.search.toLowerCase()) ||
-          project.makerName.toLowerCase().includes(filters.search.toLowerCase())
+          (project.makerName || "").toLowerCase().includes(filters.search.toLowerCase())
         : true;
 
       const matchesClay = filters.clayBody
@@ -67,12 +88,12 @@ export default function ProjectsPage() {
         : true;
 
       const matchesGlazes = filters.selectedGlazes.length
-        ? project.glazes.some((glaze) => filters.selectedGlazes.includes(glaze))
+        ? (project.glazes || []).some((glaze) => filters.selectedGlazes.includes(glaze))
         : true;
 
       return matchesSearch && matchesClay && matchesGlazes;
     });
-  }, [filters.clayBody, filters.search, filters.selectedGlazes]);
+  }, [combinedProjects, filters.clayBody, filters.search, filters.selectedGlazes]);
 
   const toggleGlazeSelection = (glazeName: string) => {
     setFilters((prev) => ({
@@ -121,7 +142,7 @@ export default function ProjectsPage() {
           </div>
           <div className="rounded-2xl bg-white/80 p-4 shadow-sm ring-1 ring-purple-100">
             <p className="text-xs font-semibold uppercase tracking-wide text-purple-700">Total Projects</p>
-            <p className="mt-2 text-2xl font-bold text-gray-900">{mockProjects.length}</p>
+            <p className="mt-2 text-2xl font-bold text-gray-900">{combinedProjects.length}</p>
             <p className="text-sm text-gray-600">Across all makers</p>
           </div>
           <div className="rounded-2xl bg-purple-600 p-4 text-white shadow-sm ring-1 ring-purple-500/50">
@@ -265,7 +286,7 @@ export default function ProjectsPage() {
                     <span className="rounded-full bg-purple-100 px-3 py-1 text-xs font-semibold text-purple-800">
                       {project.clayBody}
                     </span>
-                    {project.glazes.map((glaze) => (
+                    {(project.glazes || []).map((glaze) => (
                       <span
                         key={glaze}
                         className="rounded-full bg-indigo-50 px-3 py-1 text-xs font-semibold text-indigo-800"
