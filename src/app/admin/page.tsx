@@ -4,6 +4,7 @@ import Link from "next/link";
 import { FormEvent, ReactNode, useCallback, useEffect, useMemo, useState } from "react";
 
 import { coneChart } from "@/lib/coneReference";
+import { ClayBody, initialClayBodies } from "@/lib/clayBodies";
 import { StudioColor, initialStudioColors } from "@/lib/studioColors";
 
 type Tab = {

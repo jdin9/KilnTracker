@@ -2,14 +2,12 @@
 
 import React, { useState } from "react";
 
+import { initialClayBodies } from "@/lib/clayBodies";
+
 // TODO: replace with trpc.glazes.list and trpc.clayBodies.list
 const initialGlazes = [
   { id: "g1", name: "Fog", brand: "A" },
   { id: "g2", name: "Seaweed", brand: "B" },
-];
-const initialClayBodies = [
-  { id: "c1", name: "B-Mix" },
-  { id: "c2", name: "Speckled Stoneware" },
 ];
 
 export default function MaterialsPage() {
@@ -23,7 +21,10 @@ export default function MaterialsPage() {
   };
 
   const addClay = () => {
-    setClayBodies((prev) => [...prev, { id: `c${prev.length + 1}`, name: clayForm.name }]);
+    setClayBodies((prev) => [
+      ...prev,
+      { id: prev.length ? Math.max(...prev.map((clay) => clay.id)) + 1 : 1, name: clayForm.name },
+    ]);
   };
 
   return (
