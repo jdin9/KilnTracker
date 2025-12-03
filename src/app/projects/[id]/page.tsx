@@ -48,6 +48,8 @@ export default function ProjectDetailPage({ params }: { params: { id: string } }
   const [glazeNotes, setGlazeNotes] = useState("");
   const [firingCone, setFiringCone] = useState("");
   const [firingNotes, setFiringNotes] = useState("");
+  const [activityPhotos, setActivityPhotos] = useState<File[]>([]);
+  const [photoInputKey, setPhotoInputKey] = useState(0);
 
   const storedProjects = useMemo(() => loadStoredProjects(), []);
   const activeColors = useMemo(() => getActiveStudioColors(initialStudioColors), []);
@@ -88,6 +90,12 @@ export default function ProjectDetailPage({ params }: { params: { id: string } }
       return;
     }
 
+    const photoEntries = activityPhotos.map((file, index) => ({
+      id: `photo-${Date.now()}-${index}`,
+      url: URL.createObjectURL(file),
+      name: file.name,
+    }));
+
     const newStep =
       activityType === "glaze"
         ? {
@@ -98,7 +106,7 @@ export default function ProjectDetailPage({ params }: { params: { id: string } }
             applicationMethod: "unspecified",
             patternDescription: "",
             notes: glazeNotes || undefined,
-            photos: [],
+            photos: photoEntries,
           }
         : {
             id: `step-${Date.now()}`,
@@ -108,7 +116,7 @@ export default function ProjectDetailPage({ params }: { params: { id: string } }
             peakTemp: getConeTemperature(firingCone),
             firingDate: new Date().toISOString(),
             notes: firingNotes || undefined,
-            photos: [],
+            photos: photoEntries,
           };
 
     setData((prev) => {
@@ -128,6 +136,9 @@ export default function ProjectDetailPage({ params }: { params: { id: string } }
       setFiringCone("");
       setFiringNotes("");
     }
+
+    setActivityPhotos([]);
+    setPhotoInputKey((prev) => prev + 1);
   };
 
   if (data === "loading") {
@@ -311,6 +322,23 @@ export default function ProjectDetailPage({ params }: { params: { id: string } }
               {activityType === "glaze" ? (
                 <div className="space-y-3 rounded-2xl border border-white/20 bg-white/5 p-4">
                   <div className="space-y-2">
+                    <label className="block text-xs font-semibold text-purple-100">Photos</label>
+                    <input
+                      key={photoInputKey}
+                      type="file"
+                      accept="image/*"
+                      multiple
+                      className="w-full rounded-lg border border-dashed border-white/40 bg-white/5 px-3 py-2 text-sm text-white shadow-inner focus:border-white focus:outline-none"
+                      onChange={(event) => setActivityPhotos(Array.from(event.target.files || []))}
+                    />
+                    <p className="text-[11px] text-purple-100">
+                      {activityPhotos.length > 0
+                        ? `${activityPhotos.length} image${activityPhotos.length > 1 ? "s" : ""} ready to attach`
+                        : "Add surface reference shots or process photos."}
+                    </p>
+                  </div>
+
+                  <div className="space-y-2">
                     <label className="block text-xs font-semibold text-purple-100">Colour</label>
                     <select
                       className="w-full rounded-lg border border-white/30 bg-white/10 px-3 py-2 text-sm text-white shadow-inner focus:border-white focus:outline-none"
@@ -353,6 +381,23 @@ export default function ProjectDetailPage({ params }: { params: { id: string } }
                 </div>
               ) : (
                 <div className="space-y-3 rounded-2xl border border-white/20 bg-white/5 p-4">
+                  <div className="space-y-2">
+                    <label className="block text-xs font-semibold text-purple-100">Photos</label>
+                    <input
+                      key={photoInputKey}
+                      type="file"
+                      accept="image/*"
+                      multiple
+                      className="w-full rounded-lg border border-dashed border-white/40 bg-white/5 px-3 py-2 text-sm text-white shadow-inner focus:border-white focus:outline-none"
+                      onChange={(event) => setActivityPhotos(Array.from(event.target.files || []))}
+                    />
+                    <p className="text-[11px] text-purple-100">
+                      {activityPhotos.length > 0
+                        ? `${activityPhotos.length} firing photo${activityPhotos.length > 1 ? "s" : ""} ready to attach`
+                        : "Add kiln logs or witness cones for this firing."}
+                    </p>
+                  </div>
+
                   <div className="space-y-2">
                     <label className="block text-xs font-semibold text-purple-100">Cone</label>
                     <select
