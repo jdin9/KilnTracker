@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 import React, { useMemo, useState } from "react";
 import Link from "next/link";
@@ -7,12 +7,13 @@ import { useRouter } from "next/navigation";
 import { initialClayBodies } from "@/lib/clayBodies";
 import { coneChart } from "@/lib/coneReference";
 import { initialUsers } from "@/lib/users";
+import { saveStoredProject } from "@/lib/projectStorage";
 
 // TODO: replace with trpc.project.create.useMutation
 const useCreateProject = () => ({
   mutateAsync: async (input: any) => {
     console.log("Create project", input);
-    return { id: "new-project" };
+    return { id: input.id };
   },
 });
 
@@ -38,6 +39,7 @@ export default function NewProjectPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const res = await createProject.mutateAsync({
+      id: `proj-${Date.now()}`,
       clay_body_id: form.clayBodyId,
       bisque_temp: form.bisqueCone
         ? bisqueConeOptions.find((entry) => entry.cone === form.bisqueCone)?.temperatureF
@@ -45,6 +47,20 @@ export default function NewProjectPage() {
       title: form.title || undefined,
       maker_name: form.makerName || undefined,
       notes: form.notes || undefined,
+    });
+    saveStoredProject({
+      id: res.id,
+      title: form.title || "Untitled Project",
+      clayBody:
+        clayBodyOptions.find((clayBody) => String(clayBody.id) === form.clayBodyId)?.name || "Unknown clay body",
+      makerName: form.makerName || "Unassigned",
+      createdAt: new Date().toISOString(),
+      notes: form.notes || undefined,
+      bisqueTemp: form.bisqueCone
+        ? bisqueConeOptions.find((entry) => entry.cone === form.bisqueCone)?.temperatureF
+        : undefined,
+      glazes: [],
+      steps: [],
     });
     router.push(`/projects/${res.id}`);
   };
