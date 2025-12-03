@@ -30,11 +30,6 @@ type FiringFormModalProps = {
 
 type KilnOption = { id: string; name: string; model: string; location: string };
 
-type PhotoAsset = {
-  name: string;
-  src: string;
-};
-
 const defaultKilnOptions: KilnOption[] = [
   { id: "1", name: "Studio Workhorse", model: "Digital controller", location: "Studio" },
   { id: "2", name: "Manual Test Kiln", model: "Manual switches kiln", location: "Studio" },
@@ -64,20 +59,6 @@ const toLocalDateTime = (date: Date) => {
 const badgeStyles = {
   create: "bg-blue-100 text-blue-600",
   update: "bg-amber-100 text-amber-700",
-};
-
-const readFilesAsPhotos = async (files: File[]): Promise<PhotoAsset[]> => {
-  const readers = files.map(
-    (file) =>
-      new Promise<PhotoAsset>((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve({ name: file.name, src: typeof reader.result === "string" ? reader.result : "" });
-        reader.onerror = reject;
-        reader.readAsDataURL(file);
-      }),
-  );
-
-  return Promise.all(readers);
 };
 
 const safePersist = (key: string, value: string) => {
@@ -134,7 +115,6 @@ export function FiringFormModal({ open, onClose, mode = "create", initialData }:
     startTime: initialData?.startTime ?? toLocalDateTime(new Date()),
     outsideTempStart: initialData?.outsideTempStart ?? "",
     notes: initialData?.notes ?? "",
-    loadPhotos: [] as PhotoAsset[],
   });
 
   const coneChoices = useMemo(() => coneOptions, []);
@@ -151,7 +131,6 @@ export function FiringFormModal({ open, onClose, mode = "create", initialData }:
 
   const persistOpenFiring = (payload: any) => {
     if (typeof window === "undefined") return;
-    const reducedPhotos = form.loadPhotos.map(({ name, src }) => ({ name, src }));
     const kiln = kilnOptions.find((k) => k.id === form.kilnId);
     const existing = window.localStorage.getItem("kiln-open-firings");
     const parsed = existing ? JSON.parse(existing) : [];
@@ -165,8 +144,6 @@ export function FiringFormModal({ open, onClose, mode = "create", initialData }:
       targetCone: payload.target_cone,
       targetTemp: payload.target_temp,
       startedAt: payload.start_time,
-      loadPhotos: reducedPhotos,
-      firstPhoto: reducedPhotos[0],
     };
 
     const firingDetail = {
@@ -179,7 +156,6 @@ export function FiringFormModal({ open, onClose, mode = "create", initialData }:
       targetCone: payload.target_cone,
       targetTemp: payload.target_temp ?? undefined,
       startTime: payload.start_time,
-      loadPhotos: reducedPhotos,
       notes: form.notes || undefined,
     };
 
@@ -209,7 +185,6 @@ export function FiringFormModal({ open, onClose, mode = "create", initialData }:
       fill_level: form.fillLevel,
       outside_temp_start: form.outsideTempStart ? Number(form.outsideTempStart) : undefined,
       start_time: new Date(form.startTime).toISOString(),
-      load_photos: form.loadPhotos.map((file) => file.name),
       notes: form.notes || undefined,
     });
 
@@ -316,21 +291,6 @@ export function FiringFormModal({ open, onClose, mode = "create", initialData }:
               </div>
             </div>
 
-            <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-              <label className="text-sm font-medium text-slate-900">Load photos</label>
-              <input
-                type="file"
-                accept="image/*"
-                multiple
-                onChange={async (e) => {
-                  const files = Array.from(e.target.files ?? []);
-                  const photos = await readFilesAsPhotos(files);
-                  setForm((prev) => ({ ...prev, loadPhotos: photos }));
-                }}
-                className="mt-2 w-full cursor-pointer rounded-lg border border-dashed border-slate-300 bg-slate-50 px-3 py-3 text-sm text-slate-600 transition hover:border-blue-400"
-              />
-              <p className="mt-1 text-xs text-slate-500">Optional drop-in shots of the kiln load.</p>
-            </div>
           </div>
 
           <div className="space-y-4">
