@@ -237,6 +237,7 @@ export default function FiringDetailPage({ params }: { params: { id: string } })
     photos: [] as File[],
     shutdown: false,
     closeFiring: false,
+    tempOnly: false,
   });
 
   useEffect(() => {
@@ -333,16 +334,23 @@ export default function FiringDetailPage({ params }: { params: { id: string } })
       ? "close"
       : form.shutdown
         ? "shutdown"
-        : kilnConfig?.manualControl === "dial" && form.dialPosition
-          ? "dial"
-          : isSwitchKiln && (form.switchName || form.switchState)
-            ? "switch"
-            : form.pyrometerTemp
-              ? "temp"
-              : "note";
+        : form.tempOnly
+          ? "temp"
+          : kilnConfig?.manualControl === "dial" && form.dialPosition
+            ? "dial"
+            : isSwitchKiln && (form.switchName || form.switchState)
+              ? "switch"
+              : form.pyrometerTemp
+                ? "temp"
+                : "note";
 
     if (inferredType === "shutdown" && !form.pyrometerTemp) {
       alert("Temperature is required when shutting down the kiln.");
+      return;
+    }
+
+    if (form.tempOnly && !form.pyrometerTemp) {
+      alert("Temperature is required when logging a temp-only reading.");
       return;
     }
 
@@ -564,9 +572,10 @@ export default function FiringDetailPage({ params }: { params: { id: string } })
                 <div className="space-y-1">
                   <label className="block text-sm font-medium">Dial position</label>
                   <select
-                    className="w-full rounded border px-2 py-1"
+                    className={`w-full rounded border px-2 py-1 ${form.tempOnly ? "bg-gray-100 text-gray-500" : ""}`}
                     value={form.dialPosition}
                     onChange={(e) => setForm({ ...form, dialPosition: e.target.value })}
+                    disabled={form.tempOnly}
                   >
                     {dialPositionOptions.map((position) => (
                       <option key={position} value={position}>
@@ -582,9 +591,10 @@ export default function FiringDetailPage({ params }: { params: { id: string } })
                 <div className="space-y-1 lg:col-span-2">
                   <label className="block text-sm font-medium">Switch</label>
                   <select
-                    className="w-full rounded border px-2 py-1"
+                    className={`w-full rounded border px-2 py-1 ${form.tempOnly ? "bg-gray-100 text-gray-500" : ""}`}
                     value={form.switchName}
                     onChange={(e) => setForm({ ...form, switchName: e.target.value })}
+                    disabled={form.tempOnly}
                   >
                     {switchOptions.map((option) => (
                       <option key={option} value={option}>
@@ -594,9 +604,10 @@ export default function FiringDetailPage({ params }: { params: { id: string } })
                   </select>
                   <label className="block text-sm font-medium">Position</label>
                   <select
-                    className="w-full rounded border px-2 py-1"
+                    className={`w-full rounded border px-2 py-1 ${form.tempOnly ? "bg-gray-100 text-gray-500" : ""}`}
                     value={form.switchState}
                     onChange={(e) => setForm({ ...form, switchState: e.target.value })}
+                    disabled={form.tempOnly}
                   >
                     <option value="on">On</option>
                     <option value="off">Off</option>
@@ -613,6 +624,18 @@ export default function FiringDetailPage({ params }: { params: { id: string } })
                   onChange={(e) => setForm({ ...form, pyrometerTemp: e.target.value })}
                   placeholder="Optional; required when turning kiln off"
                 />
+              </div>
+
+              <div className="flex items-center gap-2 lg:col-span-3">
+                <input
+                  type="checkbox"
+                  checked={form.tempOnly}
+                  onChange={(e) => setForm({ ...form, tempOnly: e.target.checked })}
+                />
+                <div className="text-sm text-gray-700">
+                  <p className="font-medium">Log temperature only</p>
+                  <p className="text-xs text-gray-500">Ignore dial and switch changes for this entry.</p>
+                </div>
               </div>
 
               <div className="space-y-1 lg:col-span-4">
