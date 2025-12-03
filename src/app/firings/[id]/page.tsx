@@ -9,6 +9,11 @@ import { formatDateTime } from "@/lib/dateFormat";
 
 type ActivityType = "dial" | "switch" | "temp" | "note" | "shutdown" | "close";
 
+type PhotoAsset = {
+  name: string;
+  src: string;
+};
+
 type Activity = {
   id: string;
   timestamp: string;
@@ -18,7 +23,7 @@ type Activity = {
   dialPosition?: string;
   switchName?: string;
   switchState?: string;
-  photos?: string[];
+  photos?: PhotoAsset[];
 };
 
 type Firing = {
@@ -33,7 +38,7 @@ type Firing = {
   startTime: string;
   endTime?: string;
   maxTemp?: number;
-  loadPhotos?: string[];
+  loadPhotos?: (string | PhotoAsset)[];
   pieces?: { name: string; notes?: string }[];
   notes?: string;
 };
@@ -225,7 +230,32 @@ const getStoredHistoryFiring = (id: string): Firing | null => {
 
 const resolvePhotoUrl = (photo: string) => {
   if (photo.startsWith("http")) return photo;
+  if (photo.startsWith("data:") || photo.startsWith("blob:")) return photo;
   return `https://placehold.co/1200x800?text=${encodeURIComponent(photo)}`;
+};
+
+const normalizePhotos = (photos?: (string | PhotoAsset)[]) => {
+  if (!photos || photos.length === 0) return [] as PhotoAsset[];
+  return photos.map((photo) => {
+    if (typeof photo === "string") {
+      return { name: photo, src: resolvePhotoUrl(photo) };
+    }
+    return { name: photo.name, src: photo.src ?? resolvePhotoUrl(photo.name) };
+  });
+};
+
+const readFilesAsPhotos = async (files: File[]): Promise<PhotoAsset[]> => {
+  const readers = files.map(
+    (file) =>
+      new Promise<PhotoAsset>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve({ name: file.name, src: typeof reader.result === "string" ? reader.result : "" });
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      }),
+  );
+
+  return Promise.all(readers);
 };
 
 export default function FiringDetailPage({ params }: { params: { id: string } }) {
@@ -241,7 +271,7 @@ export default function FiringDetailPage({ params }: { params: { id: string } })
     switchState: "on",
     pyrometerTemp: "",
     note: "",
-    photos: [] as File[],
+    photos: [] as PhotoAsset[],
     shutdown: false,
     closeFiring: false,
     tempOnly: false,
@@ -275,7 +305,13 @@ export default function FiringDetailPage({ params }: { params: { id: string } })
       const storedEvents = window.localStorage.getItem(`firing-${params.id}-events`);
       if (storedEvents) {
         try {
-          setActivities(JSON.parse(storedEvents));
+          const parsed: Activity[] = JSON.parse(storedEvents);
+          setActivities(
+            parsed.map((activity) => ({
+              ...activity,
+              photos: normalizePhotos(activity.photos),
+            })),
+          );
           return;
         } catch (error) {
           console.error("Unable to parse stored firing events", error);
@@ -284,7 +320,12 @@ export default function FiringDetailPage({ params }: { params: { id: string } })
     }
 
     if (fallbackHistory?.activities) {
-      setActivities(fallbackHistory.activities);
+      setActivities(
+        fallbackHistory.activities.map((activity) => ({
+          ...activity,
+          photos: normalizePhotos(activity.photos),
+        })),
+      );
     }
   }, [params.id]);
 
@@ -324,11 +365,20 @@ export default function FiringDetailPage({ params }: { params: { id: string } })
     [activities],
   );
 
+  const loadPhotoEntries = useMemo(() => normalizePhotos(firing?.loadPhotos), [firing?.loadPhotos]);
+
   const allPhotos = useMemo(() => {
-    const loadPhotos = firing?.loadPhotos ?? [];
-    const activityPhotos = activities.flatMap((activity) => activity.photos ?? []);
-    return Array.from(new Set([...loadPhotos, ...activityPhotos]));
-  }, [activities, firing?.loadPhotos]);
+    const activityPhotos = activities.flatMap((activity) => normalizePhotos(activity.photos));
+
+    const unique = new Map<string, PhotoAsset>();
+    [...loadPhotoEntries, ...activityPhotos].forEach((photo) => {
+      if (!unique.has(photo.name)) {
+        unique.set(photo.name, photo);
+      }
+    });
+
+    return Array.from(unique.values());
+  }, [activities, loadPhotoEntries]);
 
   const openPhotoAtIndex = (index: number) => {
     if (index < 0 || index >= allPhotos.length) return;
@@ -351,6 +401,17 @@ export default function FiringDetailPage({ params }: { params: { id: string } })
       if (prev === null) return prev;
       return (prev - 1 + allPhotos.length) % allPhotos.length;
     });
+  };
+
+  const handlePhotoSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(event.target.files ?? []);
+    if (files.length === 0) {
+      setForm((prev) => ({ ...prev, photos: [] }));
+      return;
+    }
+
+    const photoAssets = await readFilesAsPhotos(files);
+    setForm((prev) => ({ ...prev, photos: photoAssets }));
   };
 
   if (!firing && !loading) return notFound();
@@ -399,7 +460,7 @@ export default function FiringDetailPage({ params }: { params: { id: string } })
       dialPosition: inferredType === "dial" ? form.dialPosition : undefined,
       switchName: inferredType === "switch" ? form.switchName || undefined : undefined,
       switchState: inferredType === "switch" ? form.switchState || undefined : undefined,
-      photos: form.photos.map((file) => file.name),
+      photos: form.photos,
     };
 
     setActivities((prev) => [...prev, activity]);
@@ -540,27 +601,27 @@ export default function FiringDetailPage({ params }: { params: { id: string } })
               </div>
             </div>
             <div className="mt-3 flex flex-wrap gap-2">
-              {firing.loadPhotos && firing.loadPhotos.length > 0 ? (
+              {loadPhotoEntries.length > 0 ? (
                 <div className="grid w-full grid-cols-2 gap-3 sm:grid-cols-3">
-                  {firing.loadPhotos.map((photo) => {
-                    const galleryIndex = allPhotos.findIndex((name) => name === photo);
+                  {loadPhotoEntries.map((photo) => {
+                    const galleryIndex = allPhotos.findIndex((item) => item.name === photo.name);
                     return (
                       <button
-                        key={photo}
+                        key={photo.name}
                         type="button"
                         onClick={() => openPhotoAtIndex(galleryIndex === -1 ? 0 : galleryIndex)}
                         className="group relative overflow-hidden rounded-2xl border border-purple-100 bg-purple-50/60 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
                       >
                         <Image
-                          src={resolvePhotoUrl(photo)}
-                          alt={photo}
+                          src={photo.src}
+                          alt={photo.name}
                           width={800}
                           height={600}
                           className="h-32 w-full object-cover"
                           sizes="(min-width: 1024px) 33vw, (min-width: 640px) 45vw, 90vw"
                         />
                         <span className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/60 to-transparent px-3 py-2 text-left text-xs font-semibold text-white">
-                          {photo}
+                          {photo.name}
                         </span>
                       </button>
                     );
@@ -708,9 +769,30 @@ export default function FiringDetailPage({ params }: { params: { id: string } })
                   type="file"
                   multiple
                   accept="image/*"
-                  onChange={(e) => setForm({ ...form, photos: Array.from(e.target.files ?? []) })}
+                  onChange={handlePhotoSelect}
                 />
                 <p className="text-xs text-gray-500">Attach load photos or document accidents at any time.</p>
+                {form.photos.length > 0 && (
+                  <div className="mt-2 grid grid-cols-3 gap-2 sm:grid-cols-4 lg:grid-cols-5">
+                    {form.photos.map((photo) => (
+                      <div
+                        key={photo.name}
+                        className="overflow-hidden rounded-xl border border-purple-100 bg-white shadow-sm"
+                        aria-label={`${photo.name} preview`}
+                      >
+                        <Image
+                          src={photo.src}
+                          alt={photo.name}
+                          width={200}
+                          height={150}
+                          className="h-20 w-full object-cover"
+                          sizes="160px"
+                        />
+                        <p className="truncate px-2 py-1 text-[10px] font-semibold text-gray-700">{photo.name}</p>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
 
               <div className="flex flex-col gap-2 lg:col-span-5 md:flex-row md:items-center md:gap-4">
@@ -771,24 +853,24 @@ export default function FiringDetailPage({ params }: { params: { id: string } })
                   {event.photos && event.photos.length > 0 && (
                     <div className="flex flex-wrap gap-2">
                       {event.photos.map((photo) => {
-                        const galleryIndex = allPhotos.findIndex((name) => name === photo);
+                        const galleryIndex = allPhotos.findIndex((item) => item.name === photo.name);
                         return (
                           <button
-                            key={`${event.id}-${photo}`}
+                            key={`${event.id}-${photo.name}`}
                             type="button"
                             onClick={() => openPhotoAtIndex(galleryIndex === -1 ? 0 : galleryIndex)}
                             className="group relative overflow-hidden rounded-xl border border-purple-100 bg-purple-50/60 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
                           >
                             <Image
-                              src={resolvePhotoUrl(photo)}
-                              alt={photo}
+                              src={photo.src}
+                              alt={photo.name}
                               width={320}
                               height={240}
                               className="h-20 w-28 object-cover"
                               sizes="120px"
                             />
                             <span className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/60 to-transparent px-2 py-1 text-left text-[10px] font-semibold text-white">
-                              {photo}
+                              {photo.name}
                             </span>
                           </button>
                         );
@@ -849,14 +931,14 @@ export default function FiringDetailPage({ params }: { params: { id: string } })
 
               <div className="flex flex-col items-center gap-4">
                 <Image
-                  src={resolvePhotoUrl(allPhotos[activePhotoIndex])}
-                  alt={allPhotos[activePhotoIndex]}
+                  src={allPhotos[activePhotoIndex].src}
+                  alt={allPhotos[activePhotoIndex].name}
                   width={1200}
                   height={800}
                   className="max-h-[70vh] w-full rounded-2xl object-contain"
                   sizes="(min-width: 1024px) 70vw, 90vw"
                 />
-                <p className="text-sm font-semibold text-gray-800">{allPhotos[activePhotoIndex]}</p>
+                <p className="text-sm font-semibold text-gray-800">{allPhotos[activePhotoIndex].name}</p>
                 {allPhotos.length > 1 && (
                   <p className="text-xs text-gray-600">
                     Photo {activePhotoIndex + 1} of {allPhotos.length}
