@@ -559,12 +559,6 @@ export default function FiringDetailPage({ params }: { params: { id: string } })
               >
                 ← Back to firings
               </Link>
-              <Link
-                href="/"
-                className="inline-flex w-fit items-center gap-2 rounded-full bg-white px-3 py-1 text-sm font-semibold text-purple-800 ring-1 ring-purple-200 transition hover:bg-purple-50"
-              >
-                ← Back to home
-              </Link>
             </div>
             <div className="space-y-1">
               <p className="text-sm font-semibold uppercase tracking-wide text-purple-700">Kiln Tracker</p>

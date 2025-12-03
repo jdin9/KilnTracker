@@ -198,14 +198,24 @@ export default function KilnDashboardPage() {
     <main className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-indigo-100 pb-12">
       <div className="mx-auto max-w-6xl px-6 py-10 space-y-10">
         <header className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div>
+          <div className="space-y-2">
             <p className="text-sm font-semibold uppercase tracking-wide text-purple-700">
               Kiln Tracker
             </p>
-            <h1 className="text-4xl font-bold text-gray-900">Firing dashboard</h1>
-            <p className="mt-1 text-base text-gray-700">
-              Jump into open firings or review your firing history.
-            </p>
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
+              <div>
+                <h1 className="text-4xl font-bold text-gray-900">Firing dashboard</h1>
+                <p className="mt-1 text-base text-gray-700">
+                  Jump into open firings or review your firing history.
+                </p>
+              </div>
+              <Link
+                href="/"
+                className="inline-flex items-center gap-2 rounded-full bg-white px-3 py-1 text-sm font-semibold text-purple-800 ring-1 ring-purple-200 transition hover:bg-purple-50"
+              >
+                ← Back to home
+              </Link>
+            </div>
           </div>
           <Link
             href="/firings/new"
