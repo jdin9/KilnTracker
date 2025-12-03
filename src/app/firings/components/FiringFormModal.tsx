@@ -157,8 +157,6 @@ export function FiringFormModal({ open, onClose, mode = "create", initialData }:
     const detailStoreRaw = window.localStorage.getItem("kiln-open-firing-details");
     const detailsStore = detailStoreRaw ? JSON.parse(detailStoreRaw) : {};
 
-    const reducedPhotos = form.loadPhotos.map((photo) => photo.name);
-
     const openFiringEntry = {
       id: payload.id,
       kilnName: kiln?.name ?? "Unknown kiln",
@@ -184,9 +182,12 @@ export function FiringFormModal({ open, onClose, mode = "create", initialData }:
       notes: form.notes || undefined,
     };
 
-    safePersist("kiln-open-firings", JSON.stringify([...parsed, openFiringEntry]));
+    window.localStorage.setItem(
+      "kiln-open-firings",
+      JSON.stringify([...parsed, openFiringEntry]),
+    );
 
-    safePersist(
+    window.localStorage.setItem(
       "kiln-open-firing-details",
       JSON.stringify({
         ...detailsStore,
