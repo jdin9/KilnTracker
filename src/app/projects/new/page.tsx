@@ -21,7 +21,6 @@ export default function NewProjectPage() {
   const createProject = useCreateProject();
   const [form, setForm] = useState({
     clayBodyId: "",
-    hasBeenBisque: false,
     bisqueCone: "",
     title: "",
     makerName: "",
@@ -40,7 +39,6 @@ export default function NewProjectPage() {
     e.preventDefault();
     const res = await createProject.mutateAsync({
       clay_body_id: form.clayBodyId,
-      has_been_bisque: form.hasBeenBisque,
       bisque_temp: form.bisqueCone
         ? bisqueConeOptions.find((entry) => entry.cone === form.bisqueCone)?.temperatureF
         : undefined,
@@ -140,19 +138,6 @@ export default function NewProjectPage() {
               </div>
             </div>
 
-            <div className="flex items-center gap-3 rounded-2xl border border-purple-100 bg-purple-50 px-4 py-3">
-              <input
-                id="bisque-status"
-                type="checkbox"
-                className="h-4 w-4 rounded border-purple-300 text-purple-600 focus:ring-purple-500"
-                checked={form.hasBeenBisque}
-                onChange={(e) => setForm({ ...form, hasBeenBisque: e.target.checked })}
-              />
-              <label className="text-sm font-semibold text-purple-900" htmlFor="bisque-status">
-                Project has been bisque fired
-              </label>
-            </div>
-
             <div className="space-y-2">
               <label className="block text-sm font-semibold text-gray-800">Notes</label>
               <textarea
@@ -186,18 +171,12 @@ export default function NewProjectPage() {
               <span className="rounded-full bg-white/20 px-3 py-1 text-xs font-semibold">Preview</span>
             </div>
 
-            <div className="rounded-2xl border border-white/30 bg-white/10 p-4 text-sm text-purple-50">
-              Once image uploads are ready, you will be able to attach reference shots, kiln logs, or glaze tests to this
-              project.
-            </div>
-
             <div className="space-y-2 rounded-2xl border border-dashed border-white/50 bg-white/5 p-4">
               <label
                 htmlFor="firing-photos"
                 className="inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-white px-4 py-2 text-sm font-semibold text-purple-700 shadow hover:bg-purple-50"
               >
                 Upload firing photos
-                <span className="text-xs font-normal text-purple-500">(multiple allowed)</span>
               </label>
               <input
                 id="firing-photos"
@@ -224,7 +203,7 @@ export default function NewProjectPage() {
                   </ul>
                 </div>
               ) : (
-                <p className="text-xs text-purple-100">Choose images from your photo library to upload later.</p>
+                <p className="text-xs text-purple-100">No images selected yet.</p>
               )}
             </div>
           </aside>
