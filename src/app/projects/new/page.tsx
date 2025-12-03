@@ -21,12 +21,12 @@ export default function NewProjectPage() {
   const createProject = useCreateProject();
   const [form, setForm] = useState({
     clayBodyId: "",
-    hasBeenBisque: false,
     bisqueCone: "",
     title: "",
     makerName: "",
     notes: "",
   });
+  const [selectedImageNames, setSelectedImageNames] = useState<string[]>([]);
 
   const clayBodyOptions = useMemo(() => initialClayBodies, []);
   const bisqueConeOptions = useMemo(() => coneChart, []);
@@ -39,7 +39,6 @@ export default function NewProjectPage() {
     e.preventDefault();
     const res = await createProject.mutateAsync({
       clay_body_id: form.clayBodyId,
-      has_been_bisque: form.hasBeenBisque,
       bisque_temp: form.bisqueCone
         ? bisqueConeOptions.find((entry) => entry.cone === form.bisqueCone)?.temperatureF
         : undefined,
@@ -77,7 +76,6 @@ export default function NewProjectPage() {
             <div className="grid gap-4 md:grid-cols-2">
               <div className="space-y-2">
                 <label className="block text-sm font-semibold text-gray-800">Clay body</label>
-                <p className="text-xs text-gray-600">Select from your studio clay bodies.</p>
                 <select
                   className="mt-1 w-full rounded-xl border border-purple-200 bg-white px-3 py-2 text-sm shadow-inner focus:border-purple-400 focus:outline-none"
                   value={form.clayBodyId}
@@ -97,7 +95,6 @@ export default function NewProjectPage() {
 
               <div className="space-y-2">
                 <label className="block text-sm font-semibold text-gray-800">Bisque temperature</label>
-                <p className="text-xs text-gray-600">Pull cones directly from kiln settings.</p>
                 <select
                   className="mt-1 w-full rounded-xl border border-purple-200 bg-white px-3 py-2 text-sm shadow-inner focus:border-purple-400 focus:outline-none"
                   value={form.bisqueCone}
@@ -126,7 +123,6 @@ export default function NewProjectPage() {
 
               <div className="space-y-2">
                 <label className="block text-sm font-semibold text-gray-800">Maker</label>
-                <p className="text-xs text-gray-600">Choose a studio member from the admin users list.</p>
                 <select
                   className="mt-1 w-full rounded-xl border border-purple-200 bg-white px-3 py-2 text-sm shadow-inner focus:border-purple-400 focus:outline-none"
                   value={form.makerName}
@@ -140,19 +136,6 @@ export default function NewProjectPage() {
                   ))}
                 </select>
               </div>
-            </div>
-
-            <div className="flex items-center gap-3 rounded-2xl border border-purple-100 bg-purple-50 px-4 py-3">
-              <input
-                id="bisque-status"
-                type="checkbox"
-                className="h-4 w-4 rounded border-purple-300 text-purple-600 focus:ring-purple-500"
-                checked={form.hasBeenBisque}
-                onChange={(e) => setForm({ ...form, hasBeenBisque: e.target.checked })}
-              />
-              <label className="text-sm font-semibold text-purple-900" htmlFor="bisque-status">
-                Project has been bisque fired
-              </label>
             </div>
 
             <div className="space-y-2">
@@ -182,26 +165,47 @@ export default function NewProjectPage() {
           <aside className="space-y-4 rounded-3xl bg-gradient-to-br from-purple-600 via-purple-500 to-indigo-500 p-6 text-white shadow-xl">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs font-semibold uppercase tracking-wide text-purple-100">Quick tips</p>
-                <h2 className="text-xl font-bold">Better project handoffs</h2>
+                <p className="text-xs font-semibold uppercase tracking-wide text-purple-100">Image Upload</p>
+                <h2 className="text-xl font-bold">Add firing photos soon</h2>
               </div>
-              <span className="rounded-full bg-white/20 px-3 py-1 text-xs font-semibold">Studio</span>
+              <span className="rounded-full bg-white/20 px-3 py-1 text-xs font-semibold">Preview</span>
             </div>
 
-            <ul className="space-y-3 text-sm text-purple-50">
-              <li className="flex gap-3">
-                <span className="mt-0.5 inline-flex h-6 w-6 items-center justify-center rounded-full bg-white/20 text-xs font-bold">1</span>
-                Store clay bodies from the admin → pottery tab so new projects stay consistent.
-              </li>
-              <li className="flex gap-3">
-                <span className="mt-0.5 inline-flex h-6 w-6 items-center justify-center rounded-full bg-white/20 text-xs font-bold">2</span>
-                Match bisque cones to the kiln → firing temps list to avoid guesswork.
-              </li>
-              <li className="flex gap-3">
-                <span className="mt-0.5 inline-flex h-6 w-6 items-center justify-center rounded-full bg-white/20 text-xs font-bold">3</span>
-                Assign makers from the admin → users tab so firing updates reach the right person.
-              </li>
-            </ul>
+            <div className="space-y-2 rounded-2xl border border-dashed border-white/50 bg-white/5 p-4">
+              <label
+                htmlFor="firing-photos"
+                className="inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-white px-4 py-2 text-sm font-semibold text-purple-700 shadow hover:bg-purple-50"
+              >
+                Upload firing photos
+              </label>
+              <input
+                id="firing-photos"
+                type="file"
+                accept="image/*"
+                multiple
+                className="sr-only"
+                onChange={(event) =>
+                  setSelectedImageNames(
+                    Array.from(event.target.files || []).map((file) => file.name)
+                  )
+                }
+              />
+
+              {selectedImageNames.length > 0 ? (
+                <div className="space-y-1 text-xs text-purple-100">
+                  <p className="font-semibold">Selected {selectedImageNames.length} image(s):</p>
+                  <ul className="space-y-1">
+                    {selectedImageNames.map((name) => (
+                      <li key={name} className="truncate" title={name}>
+                        • {name}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ) : (
+                <p className="text-xs text-purple-100">No images selected yet.</p>
+              )}
+            </div>
           </aside>
         </div>
       </div>
