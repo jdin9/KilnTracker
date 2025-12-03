@@ -77,7 +77,6 @@ export default function NewProjectPage() {
             <div className="grid gap-4 md:grid-cols-2">
               <div className="space-y-2">
                 <label className="block text-sm font-semibold text-gray-800">Clay body</label>
-                <p className="text-xs text-gray-600">Select from your studio clay bodies.</p>
                 <select
                   className="mt-1 w-full rounded-xl border border-purple-200 bg-white px-3 py-2 text-sm shadow-inner focus:border-purple-400 focus:outline-none"
                   value={form.clayBodyId}
@@ -97,7 +96,6 @@ export default function NewProjectPage() {
 
               <div className="space-y-2">
                 <label className="block text-sm font-semibold text-gray-800">Bisque temperature</label>
-                <p className="text-xs text-gray-600">Pull cones directly from kiln settings.</p>
                 <select
                   className="mt-1 w-full rounded-xl border border-purple-200 bg-white px-3 py-2 text-sm shadow-inner focus:border-purple-400 focus:outline-none"
                   value={form.bisqueCone}
@@ -126,7 +124,6 @@ export default function NewProjectPage() {
 
               <div className="space-y-2">
                 <label className="block text-sm font-semibold text-gray-800">Maker</label>
-                <p className="text-xs text-gray-600">Choose a studio member from the admin users list.</p>
                 <select
                   className="mt-1 w-full rounded-xl border border-purple-200 bg-white px-3 py-2 text-sm shadow-inner focus:border-purple-400 focus:outline-none"
                   value={form.makerName}
@@ -182,26 +179,16 @@ export default function NewProjectPage() {
           <aside className="space-y-4 rounded-3xl bg-gradient-to-br from-purple-600 via-purple-500 to-indigo-500 p-6 text-white shadow-xl">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs font-semibold uppercase tracking-wide text-purple-100">Quick tips</p>
-                <h2 className="text-xl font-bold">Better project handoffs</h2>
+                <p className="text-xs font-semibold uppercase tracking-wide text-purple-100">Image Upload</p>
+                <h2 className="text-xl font-bold">Add firing photos soon</h2>
               </div>
-              <span className="rounded-full bg-white/20 px-3 py-1 text-xs font-semibold">Studio</span>
+              <span className="rounded-full bg-white/20 px-3 py-1 text-xs font-semibold">Preview</span>
             </div>
 
-            <ul className="space-y-3 text-sm text-purple-50">
-              <li className="flex gap-3">
-                <span className="mt-0.5 inline-flex h-6 w-6 items-center justify-center rounded-full bg-white/20 text-xs font-bold">1</span>
-                Store clay bodies from the admin → pottery tab so new projects stay consistent.
-              </li>
-              <li className="flex gap-3">
-                <span className="mt-0.5 inline-flex h-6 w-6 items-center justify-center rounded-full bg-white/20 text-xs font-bold">2</span>
-                Match bisque cones to the kiln → firing temps list to avoid guesswork.
-              </li>
-              <li className="flex gap-3">
-                <span className="mt-0.5 inline-flex h-6 w-6 items-center justify-center rounded-full bg-white/20 text-xs font-bold">3</span>
-                Assign makers from the admin → users tab so firing updates reach the right person.
-              </li>
-            </ul>
+            <div className="rounded-2xl border border-white/30 bg-white/10 p-4 text-sm text-purple-50">
+              Once image uploads are ready, you will be able to attach reference shots, kiln logs, or glaze tests to this
+              project.
+            </div>
           </aside>
         </div>
       </div>
