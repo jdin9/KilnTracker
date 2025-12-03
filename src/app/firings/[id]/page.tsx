@@ -4,6 +4,8 @@ import React, { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import { formatDateTime } from "@/lib/dateFormat";
+
 type ActivityType = "dial" | "switch" | "temp" | "note" | "shutdown" | "close";
 
 type Activity = {
@@ -458,8 +460,8 @@ export default function FiringDetailPage({ params }: { params: { id: string } })
                 {firing.firingType} • Target cone {firing.targetCone} • {statusLabel}
               </p>
               <p className="text-sm text-gray-600">
-                {new Date(firing.startTime).toLocaleString()}
-                {firing.endTime && ` → ${new Date(firing.endTime).toLocaleString()}`} {firing.maxTemp && `| Max temp ${firing.maxTemp}°F`}
+                {formatDateTime(firing.startTime)}
+                {firing.endTime && ` → ${formatDateTime(firing.endTime)}`} {firing.maxTemp && `| Max temp ${firing.maxTemp}°F`}
               </p>
             </div>
           </div>
@@ -682,7 +684,7 @@ export default function FiringDetailPage({ params }: { params: { id: string } })
               <div key={event.id} className="flex flex-col gap-2 py-3 md:flex-row md:items-center md:justify-between">
                 <div className="space-y-1">
                   <p className="text-sm font-semibold text-gray-900 capitalize">{event.type.replace("_", " ")}</p>
-                  <p className="text-xs text-gray-600">{new Date(event.timestamp).toLocaleString()}</p>
+                  <p className="text-xs text-gray-600">{formatDateTime(event.timestamp)}</p>
                   {event.dialPosition && (
                     <p className="text-xs text-gray-700">Dial: {event.dialPosition}</p>
                   )}

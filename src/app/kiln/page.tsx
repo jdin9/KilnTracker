@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 
+import { formatDate, formatDateTime } from "@/lib/dateFormat";
+
 type OpenFiring = {
   id: string;
   kilnName: string;
@@ -186,9 +188,7 @@ export default function KilnDashboardPage() {
                   <p className="text-sm text-gray-700">
                     Target {firing.targetTemp ? `${firing.targetTemp}°F` : "—"}
                   </p>
-                  <p className="text-xs text-gray-500">
-                    Started {new Date(firing.startedAt).toLocaleString()}
-                  </p>
+                  <p className="text-xs text-gray-500">Started {formatDateTime(firing.startedAt)}</p>
                 </div>
                 <div className="flex h-16 w-16 items-center justify-center rounded-full bg-purple-100 text-sm font-semibold text-purple-800 ring-2 ring-purple-200">
                   {firing.status}
@@ -236,7 +236,7 @@ export default function KilnDashboardPage() {
                 {firingHistory.map((firing) => (
                   <tr key={firing.id} className="hover:bg-purple-50/60">
                     <td className="px-6 py-4 text-sm font-medium text-gray-900">
-                      {new Date(firing.date).toLocaleDateString()}
+                      {formatDate(firing.date)}
                     </td>
                     <td className="px-6 py-4 text-sm text-gray-700">{firing.kiln}</td>
                     <td className="px-6 py-4 text-sm text-gray-700">Cone {firing.targetCone}</td>

@@ -3,6 +3,8 @@
 import React, { useMemo, useState } from "react";
 import Link from "next/link";
 
+import { formatDate } from "@/lib/dateFormat";
+
 // TODO: replace with real tRPC hooks, e.g., useProjects(filters)
 const mockProjects = [
   {
@@ -84,7 +86,7 @@ export default function ProjectsPage() {
                 Clay: {project.clayBody} • Maker: {project.makerName}
               </div>
               <div className="text-xs text-gray-500">
-                Created {new Date(project.createdAt).toLocaleDateString()}
+                Created {formatDate(project.createdAt)}
               </div>
             </div>
           </Link>

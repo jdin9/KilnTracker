@@ -1,6 +1,8 @@
 import React from "react";
 import { notFound } from "next/navigation";
 
+import { formatDate } from "@/lib/dateFormat";
+
 // TODO: replace with trpc.project.detail.useQuery
 const mockProject = {
   id: "p1",
@@ -86,9 +88,7 @@ export default function ProjectDetailPage({ params }: { params: { id: string } }
                 <div className="text-sm text-gray-700 space-y-1">
                   <div>Cone: {step.cone || "—"}</div>
                   <div>Peak Temp: {step.peakTemp ?? "—"}</div>
-                  <div>
-                    Date: {step.firingDate ? new Date(step.firingDate).toLocaleDateString() : "—"}
-                  </div>
+                  <div>Date: {step.firingDate ? formatDate(step.firingDate) : "—"}</div>
                 </div>
               )}
 
