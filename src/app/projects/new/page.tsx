@@ -77,7 +77,6 @@ export default function NewProjectPage() {
             <div className="grid gap-4 md:grid-cols-2">
               <div className="space-y-2">
                 <label className="block text-sm font-semibold text-gray-800">Clay body</label>
-                <p className="text-xs text-gray-600">Select from your studio clay bodies.</p>
                 <select
                   className="mt-1 w-full rounded-xl border border-purple-200 bg-white px-3 py-2 text-sm shadow-inner focus:border-purple-400 focus:outline-none"
                   value={form.clayBodyId}
@@ -97,7 +96,6 @@ export default function NewProjectPage() {
 
               <div className="space-y-2">
                 <label className="block text-sm font-semibold text-gray-800">Bisque temperature</label>
-                <p className="text-xs text-gray-600">Pull cones directly from kiln settings.</p>
                 <select
                   className="mt-1 w-full rounded-xl border border-purple-200 bg-white px-3 py-2 text-sm shadow-inner focus:border-purple-400 focus:outline-none"
                   value={form.bisqueCone}
