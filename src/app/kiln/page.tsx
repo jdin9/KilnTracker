@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 
 import { formatDate, formatDateTime } from "@/lib/dateFormat";
@@ -113,6 +113,7 @@ const defaultHistory: FiringHistoryRow[] = [
 export default function KilnDashboardPage() {
   const [openFirings, setOpenFirings] = useState<OpenFiring[]>(defaultOpenFirings);
   const [firingHistory, setFiringHistory] = useState<FiringHistoryRow[]>(defaultHistory);
+  const [selectedKiln, setSelectedKiln] = useState<string>("all");
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -141,6 +142,16 @@ export default function KilnDashboardPage() {
     }
   }, []);
 
+  const kilnOptions = useMemo(() => {
+    const kilnNames = firingHistory.map((firing) => firing.kiln);
+    return Array.from(new Set(kilnNames));
+  }, [firingHistory]);
+
+  const filteredHistory = useMemo(() => {
+    if (selectedKiln === "all") return firingHistory;
+    return firingHistory.filter((firing) => firing.kiln === selectedKiln);
+  }, [firingHistory, selectedKiln]);
+
   return (
     <main className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-indigo-100 pb-12">
       <div className="mx-auto max-w-6xl px-6 py-10 space-y-10">
@@ -168,12 +179,6 @@ export default function KilnDashboardPage() {
               <h2 className="text-xl font-semibold text-gray-900">Open firings</h2>
               <p className="text-sm text-gray-600">Quick links to active logs.</p>
             </div>
-            <Link
-              href="/firings"
-              className="text-sm font-semibold text-purple-700 underline-offset-4 hover:underline"
-            >
-              View all firings
-            </Link>
           </div>
           <div className="grid gap-3 md:grid-cols-2">
             {openFirings.map((firing) => (
@@ -204,10 +209,28 @@ export default function KilnDashboardPage() {
         </section>
 
         <section className="space-y-4">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h2 className="text-xl font-semibold text-gray-900">Firing history</h2>
               <p className="text-sm text-gray-600">Click into any firing to review logs, photos, and pieces.</p>
+            </div>
+            <div className="flex items-center gap-3">
+              <label className="text-sm font-medium text-gray-700" htmlFor="kiln-filter">
+                Filter by kiln
+              </label>
+              <select
+                id="kiln-filter"
+                value={selectedKiln}
+                onChange={(event) => setSelectedKiln(event.target.value)}
+                className="rounded-lg border border-purple-200 bg-white px-3 py-2 text-sm font-medium text-gray-800 shadow-sm transition focus:border-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-200"
+              >
+                <option value="all">All kilns</option>
+                {kilnOptions.map((kiln) => (
+                  <option key={kiln} value={kiln}>
+                    {kiln}
+                  </option>
+                ))}
+              </select>
             </div>
           </div>
           <div className="overflow-hidden rounded-3xl bg-white/90 shadow-lg ring-1 ring-purple-100">
@@ -233,7 +256,7 @@ export default function KilnDashboardPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-purple-50/70">
-                {firingHistory.map((firing) => (
+                {filteredHistory.map((firing) => (
                   <tr key={firing.id} className="hover:bg-purple-50/60">
                     <td className="px-6 py-4 text-sm font-medium text-gray-900">
                       {formatDate(firing.date)}
