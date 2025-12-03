@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 
 import { formatDate, formatDateTime } from "@/lib/dateFormat";
@@ -113,6 +113,13 @@ const defaultHistory: FiringHistoryRow[] = [
 export default function KilnDashboardPage() {
   const [openFirings, setOpenFirings] = useState<OpenFiring[]>(defaultOpenFirings);
   const [firingHistory, setFiringHistory] = useState<FiringHistoryRow[]>(defaultHistory);
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [selectedKiln, setSelectedKiln] = useState<string>("all");
+  const [selectedCone, setSelectedCone] = useState<string>("all");
+  const [minReached, setMinReached] = useState<string>("");
+  const [maxReached, setMaxReached] = useState<string>("");
+  const [startDate, setStartDate] = useState<string>("");
+  const [endDate, setEndDate] = useState<string>("");
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -141,6 +148,52 @@ export default function KilnDashboardPage() {
     }
   }, []);
 
+  const kilnOptions = useMemo(() => {
+    const kilnNames = firingHistory.map((firing) => firing.kiln);
+    return Array.from(new Set(kilnNames));
+  }, [firingHistory]);
+
+  const coneOptions = useMemo(() => {
+    const cones = firingHistory.map((firing) => firing.targetCone);
+    return Array.from(new Set(cones));
+  }, [firingHistory]);
+
+  const filteredHistory = useMemo(() => {
+    return firingHistory.filter((firing) => {
+      if (selectedKiln !== "all" && firing.kiln !== selectedKiln) return false;
+      if (selectedCone !== "all" && firing.targetCone !== selectedCone) return false;
+
+      const firingDate = new Date(firing.date);
+      if (startDate && firingDate < new Date(startDate)) return false;
+      if (endDate && firingDate > new Date(endDate)) return false;
+
+      if (minReached) {
+        const min = Number(minReached);
+        if (Number.isFinite(min)) {
+          if (!firing.tempReached || firing.tempReached < min) return false;
+        }
+      }
+
+      if (maxReached) {
+        const max = Number(maxReached);
+        if (Number.isFinite(max)) {
+          if (!firing.tempReached || firing.tempReached > max) return false;
+        }
+      }
+
+      return true;
+    });
+  }, [endDate, firingHistory, maxReached, minReached, selectedCone, selectedKiln, startDate]);
+
+  const clearFilters = () => {
+    setSelectedKiln("all");
+    setSelectedCone("all");
+    setMinReached("");
+    setMaxReached("");
+    setStartDate("");
+    setEndDate("");
+  };
+
   return (
     <main className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-indigo-100 pb-12">
       <div className="mx-auto max-w-6xl px-6 py-10 space-y-10">
@@ -168,12 +221,6 @@ export default function KilnDashboardPage() {
               <h2 className="text-xl font-semibold text-gray-900">Open firings</h2>
               <p className="text-sm text-gray-600">Quick links to active logs.</p>
             </div>
-            <Link
-              href="/firings"
-              className="text-sm font-semibold text-purple-700 underline-offset-4 hover:underline"
-            >
-              View all firings
-            </Link>
           </div>
           <div className="grid gap-3 md:grid-cols-2">
             {openFirings.map((firing) => (
@@ -204,12 +251,112 @@ export default function KilnDashboardPage() {
         </section>
 
         <section className="space-y-4">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h2 className="text-xl font-semibold text-gray-900">Firing history</h2>
               <p className="text-sm text-gray-600">Click into any firing to review logs, photos, and pieces.</p>
             </div>
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={() => setIsFilterOpen((open) => !open)}
+                className="inline-flex items-center gap-2 rounded-full border border-purple-200 bg-white px-3 py-2 text-sm font-semibold text-purple-800 shadow-sm transition hover:border-purple-300 hover:bg-purple-50"
+              >
+                <span aria-hidden>⏷</span>
+                Filters
+              </button>
+              <button
+                type="button"
+                onClick={clearFilters}
+                className="text-sm font-semibold text-purple-700 underline-offset-4 hover:underline"
+              >
+                Clear all
+              </button>
+            </div>
           </div>
+          {isFilterOpen && (
+            <div className="grid gap-4 rounded-2xl border border-purple-100 bg-white/80 p-4 shadow-sm md:grid-cols-2 lg:grid-cols-3">
+              <label className="space-y-1 text-sm font-medium text-gray-800">
+                Kiln
+                <select
+                  id="kiln-filter"
+                  value={selectedKiln}
+                  onChange={(event) => setSelectedKiln(event.target.value)}
+                  className="mt-1 w-full rounded-lg border border-purple-200 bg-white px-3 py-2 text-sm font-medium text-gray-800 shadow-sm transition focus:border-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-200"
+                >
+                  <option value="all">All kilns</option>
+                  {kilnOptions.map((kiln) => (
+                    <option key={kiln} value={kiln}>
+                      {kiln}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className="space-y-1 text-sm font-medium text-gray-800">
+                Target cone
+                <select
+                  value={selectedCone}
+                  onChange={(event) => setSelectedCone(event.target.value)}
+                  className="mt-1 w-full rounded-lg border border-purple-200 bg-white px-3 py-2 text-sm font-medium text-gray-800 shadow-sm transition focus:border-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-200"
+                >
+                  <option value="all">All cones</option>
+                  {coneOptions.map((cone) => (
+                    <option key={cone} value={cone}>
+                      Cone {cone}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <div className="space-y-2 rounded-xl bg-purple-50/60 p-3">
+                <p className="text-xs font-semibold uppercase tracking-wide text-purple-700">Date range</p>
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  <label className="space-y-1 text-sm font-medium text-gray-800">
+                    Start
+                    <input
+                      type="date"
+                      value={startDate}
+                      onChange={(event) => setStartDate(event.target.value)}
+                      className="mt-1 w-full rounded-lg border border-purple-200 bg-white px-3 py-2 text-sm font-medium text-gray-800 shadow-sm transition focus:border-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-200"
+                    />
+                  </label>
+                  <label className="space-y-1 text-sm font-medium text-gray-800">
+                    End
+                    <input
+                      type="date"
+                      value={endDate}
+                      onChange={(event) => setEndDate(event.target.value)}
+                      className="mt-1 w-full rounded-lg border border-purple-200 bg-white px-3 py-2 text-sm font-medium text-gray-800 shadow-sm transition focus:border-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-200"
+                    />
+                  </label>
+                </div>
+              </div>
+              <div className="space-y-2 rounded-xl bg-purple-50/60 p-3 md:col-span-2 lg:col-span-1">
+                <p className="text-xs font-semibold uppercase tracking-wide text-purple-700">Temp reached (°F)</p>
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  <label className="space-y-1 text-sm font-medium text-gray-800">
+                    Min
+                    <input
+                      type="number"
+                      inputMode="numeric"
+                      value={minReached}
+                      onChange={(event) => setMinReached(event.target.value)}
+                      className="mt-1 w-full rounded-lg border border-purple-200 bg-white px-3 py-2 text-sm font-medium text-gray-800 shadow-sm transition focus:border-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-200"
+                    />
+                  </label>
+                  <label className="space-y-1 text-sm font-medium text-gray-800">
+                    Max
+                    <input
+                      type="number"
+                      inputMode="numeric"
+                      value={maxReached}
+                      onChange={(event) => setMaxReached(event.target.value)}
+                      className="mt-1 w-full rounded-lg border border-purple-200 bg-white px-3 py-2 text-sm font-medium text-gray-800 shadow-sm transition focus:border-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-200"
+                    />
+                  </label>
+                </div>
+              </div>
+            </div>
+          )}
           <div className="overflow-hidden rounded-3xl bg-white/90 shadow-lg ring-1 ring-purple-100">
             <table className="min-w-full divide-y divide-purple-100">
               <thead className="bg-purple-50/60">
@@ -233,7 +380,7 @@ export default function KilnDashboardPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-purple-50/70">
-                {firingHistory.map((firing) => (
+                {filteredHistory.map((firing) => (
                   <tr key={firing.id} className="hover:bg-purple-50/60">
                     <td className="px-6 py-4 text-sm font-medium text-gray-900">
                       {formatDate(firing.date)}
