@@ -43,6 +43,13 @@ export default function NewProjectPage() {
     setProjectFiles((prev) => [...prev, ...selectedFiles]);
   };
 
+  const clayBodyOptions = useMemo(() => initialClayBodies, []);
+  const bisqueConeOptions = useMemo(() => coneChart, []);
+  const makerOptions = useMemo(
+    () => initialUsers.map((user) => ({ ...user, fullName: `${user.firstName} ${user.lastName}` })),
+    []
+  );
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const res = await createProject.mutateAsync({
