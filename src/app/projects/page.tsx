@@ -3,6 +3,7 @@
 import React, { useMemo, useState } from "react";
 import Link from "next/link";
 
+import { initialClayBodies } from "@/lib/clayBodies";
 import { formatDate } from "@/lib/dateFormat";
 import { getActiveStudioColors, initialStudioColors } from "@/lib/studioColors";
 
@@ -11,7 +12,7 @@ const mockProjects = [
   {
     id: "p1",
     title: "Celadon Carved Vase",
-    clayBody: "B-Mix",
+    clayBody: initialClayBodies[0]?.name ?? "Stoneware 266",
     makerName: "Alex",
     createdAt: new Date().toISOString(),
     coverUrl: null,
@@ -20,7 +21,7 @@ const mockProjects = [
   {
     id: "p2",
     title: "Shino Serving Set",
-    clayBody: "Stoneware",
+    clayBody: initialClayBodies[1]?.name ?? "Porcelain P10",
     makerName: "Jamie",
     createdAt: new Date().toISOString(),
     coverUrl: null,
@@ -29,7 +30,7 @@ const mockProjects = [
   {
     id: "p3",
     title: "Floating Blue Mugs",
-    clayBody: "Porcelain",
+    clayBody: initialClayBodies[2]?.name ?? "Speckled Buff",
     makerName: "Taylor",
     createdAt: new Date().toISOString(),
     coverUrl: null,
@@ -48,6 +49,7 @@ export default function ProjectsPage() {
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [glazeDropdownOpen, setGlazeDropdownOpen] = useState(false);
 
+  const clayBodyOptions = useMemo(() => initialClayBodies, []);
   const activeGlazes = useMemo(
     () => getActiveStudioColors(initialStudioColors),
     []
@@ -61,7 +63,7 @@ export default function ProjectsPage() {
         : true;
 
       const matchesClay = filters.clayBody
-        ? project.clayBody.toLowerCase().includes(filters.clayBody.toLowerCase())
+        ? project.clayBody === filters.clayBody
         : true;
 
       const matchesGlazes = filters.selectedGlazes.length
@@ -213,17 +215,25 @@ export default function ProjectsPage() {
                 <label className="text-sm font-semibold text-gray-800" htmlFor="clay-body">
                   Clay body
                 </label>
-                <p className="text-xs text-gray-600">Type to filter by the clay you used.</p>
-                <input
+                <p className="text-xs text-gray-600">Choose from available clay bodies.</p>
+                <select
                   id="clay-body"
-                  type="text"
                   value={filters.clayBody || ""}
                   onChange={(event) =>
-                    setFilters((prev) => ({ ...prev, clayBody: event.target.value }))
+                    setFilters((prev) => ({
+                      ...prev,
+                      clayBody: event.target.value ? event.target.value : undefined,
+                    }))
                   }
                   className="mt-2 w-full rounded-xl border border-purple-200 bg-white px-3 py-2 text-sm shadow-inner focus:border-purple-400 focus:outline-none"
-                  placeholder="e.g. Porcelain"
-                />
+                >
+                  <option value="">Any clay body</option>
+                  {clayBodyOptions.map((clay) => (
+                    <option key={clay.id} value={clay.name}>
+                      {clay.name}
+                    </option>
+                  ))}
+                </select>
               </div>
             </div>
           )}
