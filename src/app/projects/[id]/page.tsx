@@ -39,7 +39,7 @@ const mockProject = {
 };
 
 export default function ProjectDetailPage({ params }: { params: { id: string } }) {
-  const [data, setData] = useState<StoredProject | null>(null);
+  const [data, setData] = useState<StoredProject | null | "loading">("loading");
 
   const storedProjects = useMemo(() => loadStoredProjects(), []);
 
@@ -66,6 +66,16 @@ export default function ProjectDetailPage({ params }: { params: { id: string } }
 
     setData(null);
   }, [params.id, storedProjects]);
+
+  if (data === "loading") {
+    return (
+      <main className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-indigo-50 px-6 py-8">
+        <div className="mx-auto flex max-w-5xl flex-col gap-6">
+          <p className="text-sm text-gray-600">Loading project…</p>
+        </div>
+      </main>
+    );
+  }
 
   if (!data) return notFound();
 
