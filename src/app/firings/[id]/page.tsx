@@ -5,7 +5,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { formatDateTime } from "@/lib/dateFormat";
-import { getConeTemperature } from "@/lib/coneChart";
+import { getConeTemperature, seedConeChart } from "@/lib/firingTemperatures";
 
 type ActivityType = "dial" | "switch" | "temp" | "note" | "shutdown" | "close";
 
@@ -241,6 +241,7 @@ export default function FiringDetailPage({ params }: { params: { id: string } })
   });
 
   useEffect(() => {
+    seedConeChart();
     const fromOpen = getStoredFiring(params.id);
     const fromHistory = getStoredHistoryFiring(params.id);
     const fallbackHistory = defaultHistoryDetails[params.id];

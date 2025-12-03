@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 
 import { formatDate, formatDateTime } from "@/lib/dateFormat";
-import { getConeTemperature } from "@/lib/coneChart";
+import { getConeTemperature, seedConeChart } from "@/lib/firingTemperatures";
 
 type OpenFiring = {
   id: string;
@@ -127,6 +127,7 @@ export default function KilnDashboardPage() {
 
   useEffect(() => {
     if (typeof window === "undefined") return;
+    seedConeChart();
 
     const open = window.localStorage.getItem("kiln-open-firings");
     const history = window.localStorage.getItem("kiln-firing-history");

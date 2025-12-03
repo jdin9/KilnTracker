@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { FormEvent, ReactNode, useEffect, useMemo, useState } from "react";
 
-import { coneChart } from "@/lib/coneChart";
+import { DEFAULT_CONE_CHART, seedConeChart } from "@/lib/firingTemperatures";
 
 type Tab = {
   id: string;
@@ -117,6 +117,7 @@ export default function AdminPage() {
     name: "",
     brand: "",
   });
+  const [coneChart, setConeChart] = useState(DEFAULT_CONE_CHART);
 
   const resetForm = () => {
     setForm({ firstName: "", lastName: "", username: "", password: "" });
@@ -142,6 +143,10 @@ export default function AdminPage() {
     if (typeof window === "undefined") return;
     window.localStorage.setItem(KILN_STORAGE_KEY, JSON.stringify(kilns));
   }, [kilns]);
+
+  useEffect(() => {
+    setConeChart(seedConeChart());
+  }, []);
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();

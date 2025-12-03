@@ -3,7 +3,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 
-import { coneChart, getConeTemperature } from "@/lib/coneChart";
+import { getConeTemperature, seedConeChart } from "@/lib/firingTemperatures";
 
 // TODO: replace with real tRPC mutation (e.g., trpc.firing.create.useMutation)
 const useCreateFiring = () => ({
@@ -38,8 +38,6 @@ const defaultKilnOptions: KilnOption[] = [
 
 const KILN_STORAGE_KEY = "kiln-definitions";
 
-const coneOptions = [...coneChart].reverse().map((entry) => entry.cone);
-
 const fillLevels = [
   { value: "sparse", label: "Sparse" },
   { value: "half", label: "Half full" },
@@ -66,6 +64,7 @@ export function FiringFormModal({ open, onClose, mode = "create", initialData }:
   const createFiring = useCreateFiring();
 
   const [kilnOptions, setKilnOptions] = useState<KilnOption[]>(defaultKilnOptions);
+  const [coneChoices, setConeChoices] = useState<string[]>([]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -93,10 +92,14 @@ export function FiringFormModal({ open, onClose, mode = "create", initialData }:
     }
   }, []);
 
+  useEffect(() => {
+    setConeChoices(seedConeChart().map((entry) => entry.cone).reverse());
+  }, []);
+
   const [form, setForm] = useState({
     kilnId: initialData?.kilnId ?? defaultKilnOptions[0]?.id ?? "",
     firingType: initialData?.firingType ?? "bisque",
-    targetCone: initialData?.targetCone ?? coneOptions.find((cone) => cone === "06") ?? coneOptions[0],
+    targetCone: initialData?.targetCone ?? "06",
     fillLevel: initialData?.fillLevel ?? fillLevels[0].value,
     startTime: initialData?.startTime ?? toLocalDateTime(new Date()),
     outsideTempStart: initialData?.outsideTempStart ?? "",
@@ -106,7 +109,18 @@ export function FiringFormModal({ open, onClose, mode = "create", initialData }:
 
   const targetTemp = useMemo(() => getConeTemperature(form.targetCone), [form.targetCone]);
 
-  const coneChoices = useMemo(() => coneOptions, []);
+  useEffect(() => {
+    if (!coneChoices.length) return;
+    setForm((prev) => ({
+      ...prev,
+      targetCone:
+        prev.targetCone && coneChoices.includes(prev.targetCone)
+          ? prev.targetCone
+          : coneChoices.includes("06")
+            ? "06"
+            : coneChoices[0],
+    }));
+  }, [coneChoices]);
 
   useEffect(() => {
     if (!kilnOptions.length) return;
