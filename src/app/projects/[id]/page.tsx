@@ -1,8 +1,11 @@
-import React from "react";
+"use client";
+
+import React, { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { formatDate } from "@/lib/dateFormat";
+import { loadStoredProjects, StoredProject } from "@/lib/projectStorage";
 
 // TODO: replace with trpc.project.detail.useQuery
 const mockProject = {
@@ -36,8 +39,43 @@ const mockProject = {
 };
 
 export default function ProjectDetailPage({ params }: { params: { id: string } }) {
-  // const { data, isLoading } = trpc.project.detail.useQuery({ id: params.id });
-  const data = mockProject;
+  const [data, setData] = useState<StoredProject | null | "loading">("loading");
+
+  const storedProjects = useMemo(() => loadStoredProjects(), []);
+
+  useEffect(() => {
+    const storedMatch = storedProjects.find((project) => project.id === params.id);
+
+    if (storedMatch) {
+      setData(storedMatch);
+      return;
+    }
+
+    if (params.id === mockProject.id) {
+      setData({
+        id: mockProject.id,
+        title: mockProject.title,
+        clayBody: mockProject.clayBody,
+        makerName: mockProject.makerName,
+        createdAt: new Date().toISOString(),
+        notes: mockProject.notes,
+        steps: mockProject.steps,
+      });
+      return;
+    }
+
+    setData(null);
+  }, [params.id, storedProjects]);
+
+  if (data === "loading") {
+    return (
+      <main className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-indigo-50 px-6 py-8">
+        <div className="mx-auto flex max-w-5xl flex-col gap-6">
+          <p className="text-sm text-gray-600">Loading project…</p>
+        </div>
+      </main>
+    );
+  }
 
   if (!data) return notFound();
 
