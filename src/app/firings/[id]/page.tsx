@@ -552,12 +552,20 @@ export default function FiringDetailPage({ params }: { params: { id: string } })
       <div className="mx-auto max-w-5xl space-y-8">
         <header className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
           <div className="space-y-3">
-            <Link
-              href="/kiln"
-              className="inline-flex w-fit items-center gap-2 text-sm font-semibold text-purple-800 underline-offset-4 hover:underline"
-            >
-              ← Back to firings
-            </Link>
+            <div className="flex flex-wrap items-center gap-3">
+              <Link
+                href="/kiln"
+                className="inline-flex w-fit items-center gap-2 text-sm font-semibold text-purple-800 underline-offset-4 hover:underline"
+              >
+                ← Back to firings
+              </Link>
+              <Link
+                href="/"
+                className="inline-flex w-fit items-center gap-2 rounded-full bg-white px-3 py-1 text-sm font-semibold text-purple-800 ring-1 ring-purple-200 transition hover:bg-purple-50"
+              >
+                ← Back to home
+              </Link>
+            </div>
             <div className="space-y-1">
               <p className="text-sm font-semibold uppercase tracking-wide text-purple-700">Kiln Tracker</p>
               <h1 className="text-3xl font-bold text-gray-900">{firing.kilnName} firing</h1>
