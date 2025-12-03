@@ -6,20 +6,13 @@ import { FormEvent, ReactNode, useCallback, useEffect, useMemo, useState } from 
 import { coneChart } from "@/lib/coneReference";
 import { ClayBody, initialClayBodies } from "@/lib/clayBodies";
 import { StudioColor, initialStudioColors } from "@/lib/studioColors";
+import { User, initialUsers } from "@/lib/users";
 
 type Tab = {
   id: string;
   label: string;
   summary: string;
   content: ReactNode;
-};
-
-type User = {
-  id: number;
-  firstName: string;
-  lastName: string;
-  username: string;
-  password: string;
 };
 
 type KilnType = "manual" | "digital";
@@ -40,30 +33,6 @@ type ClayBody = {
 };
 
 const KILN_STORAGE_KEY = "kiln-admin-kilns";
-
-const initialUsers: User[] = [
-  {
-    id: 1,
-    firstName: "Jamie",
-    lastName: "Rivera",
-    username: "jrivera",
-    password: "wheelThrow123",
-  },
-  {
-    id: 2,
-    firstName: "Taylor",
-    lastName: "Shaw",
-    username: "tshaw",
-    password: "glazeGuard!",
-  },
-  {
-    id: 3,
-    firstName: "Morgan",
-    lastName: "Lee",
-    username: "mlee",
-    password: "kilnSafe2024",
-  },
-];
 
 const initialKilns: Kiln[] = [
   {
