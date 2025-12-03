@@ -1,7 +1,7 @@
 'use client';
+/* eslint-disable @next/next/no-img-element */
 
 import React, { useEffect, useMemo, useState } from "react";
-import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
@@ -39,6 +39,7 @@ type Firing = {
   endTime?: string;
   maxTemp?: number;
   loadPhotos?: (string | PhotoAsset)[];
+  firstPhoto?: PhotoAsset;
   pieces?: { name: string; notes?: string }[];
   notes?: string;
 };
@@ -228,19 +229,23 @@ const getStoredHistoryFiring = (id: string): Firing | null => {
   };
 };
 
-const resolvePhotoUrl = (photo: string) => {
+const resolvePhotoUrl = (photo: string, index = 0) => {
   if (photo.startsWith("http")) return photo;
   if (photo.startsWith("data:") || photo.startsWith("blob:")) return photo;
-  return `https://placehold.co/1200x800?text=${encodeURIComponent(photo)}`;
+  const palette = ["#a855f7", "#6366f1", "#f97316", "#0ea5e9"];
+  const color = palette[index % palette.length];
+  const label = photo.replace(/[-_]/g, " ");
+  const svg = `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 800' preserveAspectRatio='xMidYMid slice'><rect width='1200' height='800' fill='${color}'/><text x='50%' y='50%' dominant-baseline='middle' text-anchor='middle' font-family='Inter, Arial' font-size='64' fill='white'>${label}</text></svg>`;
+  return `data:image/svg+xml,${encodeURIComponent(svg)}`;
 };
 
 const normalizePhotos = (photos?: (string | PhotoAsset)[]) => {
   if (!photos || photos.length === 0) return [] as PhotoAsset[];
-  return photos.map((photo) => {
+  return photos.map((photo, index) => {
     if (typeof photo === "string") {
-      return { name: photo, src: resolvePhotoUrl(photo) };
+      return { name: photo, src: resolvePhotoUrl(photo, index) };
     }
-    return { name: photo.name, src: photo.src ?? resolvePhotoUrl(photo.name) };
+    return { name: photo.name, src: photo.src ?? resolvePhotoUrl(photo.name, index) };
   });
 };
 
@@ -372,8 +377,9 @@ export default function FiringDetailPage({ params }: { params: { id: string } })
 
     const unique = new Map<string, PhotoAsset>();
     [...loadPhotoEntries, ...activityPhotos].forEach((photo) => {
-      if (!unique.has(photo.name)) {
-        unique.set(photo.name, photo);
+      const key = `${photo.name}-${photo.src}`;
+      if (!unique.has(key)) {
+        unique.set(key, photo);
       }
     });
 
@@ -495,6 +501,7 @@ export default function FiringDetailPage({ params }: { params: { id: string } })
           status: "closed",
           endTime,
           maxTemp: activity.pyrometerTemp ?? firing.maxTemp,
+          loadPhotos: allPhotos,
         };
         window.localStorage.setItem(
           HISTORY_DETAIL_KEY,
@@ -522,6 +529,8 @@ export default function FiringDetailPage({ params }: { params: { id: string } })
               tempReached: activity.pyrometerTemp ?? firing.maxTemp,
               status: "Completed",
               endTime,
+              loadPhotos: allPhotos,
+              firstPhoto: allPhotos[0],
             },
           ]),
         );
@@ -614,13 +623,10 @@ export default function FiringDetailPage({ params }: { params: { id: string } })
                         onClick={() => openPhotoAtIndex(galleryIndex === -1 ? 0 : galleryIndex)}
                         className="group relative overflow-hidden rounded-2xl border border-purple-100 bg-purple-50/60 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
                       >
-                        <Image
+                        <img
                           src={photo.src}
                           alt={photo.name}
-                          width={800}
-                          height={600}
                           className="h-32 w-full object-cover"
-                          sizes="(min-width: 1024px) 33vw, (min-width: 640px) 45vw, 90vw"
                         />
                         <span className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/60 to-transparent px-3 py-2 text-left text-xs font-semibold text-white">
                           {photo.name}
@@ -782,13 +788,10 @@ export default function FiringDetailPage({ params }: { params: { id: string } })
                         className="overflow-hidden rounded-xl border border-purple-100 bg-white shadow-sm"
                         aria-label={`${photo.name} preview`}
                       >
-                        <Image
+                        <img
                           src={photo.src}
                           alt={photo.name}
-                          width={200}
-                          height={150}
                           className="h-20 w-full object-cover"
-                          sizes="160px"
                         />
                         <p className="truncate px-2 py-1 text-[10px] font-semibold text-gray-700">{photo.name}</p>
                       </div>
@@ -863,14 +866,11 @@ export default function FiringDetailPage({ params }: { params: { id: string } })
                             onClick={() => openPhotoAtIndex(galleryIndex === -1 ? 0 : galleryIndex)}
                             className="group relative overflow-hidden rounded-xl border border-purple-100 bg-purple-50/60 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
                           >
-                            <Image
-                              src={photo.src}
-                              alt={photo.name}
-                              width={320}
-                              height={240}
-                              className="h-20 w-28 object-cover"
-                              sizes="120px"
-                            />
+                        <img
+                          src={photo.src}
+                          alt={photo.name}
+                          className="h-20 w-28 object-cover"
+                        />
                             <span className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/60 to-transparent px-2 py-1 text-left text-[10px] font-semibold text-white">
                               {photo.name}
                             </span>
@@ -932,13 +932,10 @@ export default function FiringDetailPage({ params }: { params: { id: string } })
               </div>
 
               <div className="flex flex-col items-center gap-4">
-                <Image
+                <img
                   src={allPhotos[activePhotoIndex].src}
                   alt={allPhotos[activePhotoIndex].name}
-                  width={1200}
-                  height={800}
                   className="max-h-[70vh] w-full rounded-2xl object-contain"
-                  sizes="(min-width: 1024px) 70vw, 90vw"
                 />
                 <p className="text-sm font-semibold text-gray-800">{allPhotos[activePhotoIndex].name}</p>
                 {allPhotos.length > 1 && (
