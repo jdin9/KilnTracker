@@ -165,10 +165,20 @@ const nowLocal = () => {
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
 };
 
+const readStorage = (key: string) => {
+  if (typeof window === "undefined") return null;
+  try {
+    return window.localStorage.getItem(key) ?? window.sessionStorage.getItem(key);
+  } catch (error) {
+    console.warn(`Unable to read ${key} from storage`, error);
+    return null;
+  }
+};
+
 const getStoredFiring = (id: string): Firing | null => {
   if (typeof window === "undefined") return null;
 
-  const detailedStore = window.localStorage.getItem(OPEN_DETAIL_KEY);
+  const detailedStore = readStorage(OPEN_DETAIL_KEY);
   if (detailedStore) {
     try {
       const parsed = JSON.parse(detailedStore);
@@ -178,7 +188,7 @@ const getStoredFiring = (id: string): Firing | null => {
     }
   }
 
-  const open = window.localStorage.getItem("kiln-open-firings");
+  const open = readStorage("kiln-open-firings");
   const parsed = open ? JSON.parse(open) : [];
   const match = parsed.find((item: any) => item.id === id);
   if (!match) return null;
@@ -199,7 +209,7 @@ const getStoredFiring = (id: string): Firing | null => {
 const getStoredHistoryFiring = (id: string): Firing | null => {
   if (typeof window === "undefined") return null;
 
-  const historyDetailStore = window.localStorage.getItem(HISTORY_DETAIL_KEY);
+  const historyDetailStore = readStorage(HISTORY_DETAIL_KEY);
   if (historyDetailStore) {
     try {
       const parsed = JSON.parse(historyDetailStore);
@@ -209,7 +219,7 @@ const getStoredHistoryFiring = (id: string): Firing | null => {
     }
   }
 
-  const history = window.localStorage.getItem("kiln-firing-history");
+  const history = readStorage("kiln-firing-history");
   const parsed = history ? JSON.parse(history) : [];
   const match = parsed.find((item: any) => item.id === id);
   if (!match) return null;
