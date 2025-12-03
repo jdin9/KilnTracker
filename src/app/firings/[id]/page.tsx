@@ -1,7 +1,7 @@
 'use client';
+/* eslint-disable @next/next/no-img-element */
 
 import React, { useEffect, useMemo, useState } from "react";
-import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
@@ -39,6 +39,7 @@ type Firing = {
   endTime?: string;
   maxTemp?: number;
   loadPhotos?: (string | PhotoAsset)[];
+  firstPhoto?: PhotoAsset;
   pieces?: { name: string; notes?: string }[];
   notes?: string;
 };
@@ -167,7 +168,7 @@ const nowLocal = () => {
 const getStoredFiring = (id: string): Firing | null => {
   if (typeof window === "undefined") return null;
 
-  const detailedStore = window.localStorage.getItem(OPEN_DETAIL_KEY);
+  const detailedStore = readStorageValue(OPEN_DETAIL_KEY);
   if (detailedStore) {
     try {
       const parsed = JSON.parse(detailedStore);
@@ -177,7 +178,7 @@ const getStoredFiring = (id: string): Firing | null => {
     }
   }
 
-  const open = window.localStorage.getItem("kiln-open-firings");
+  const open = readStorageValue("kiln-open-firings");
   const parsed = open ? JSON.parse(open) : [];
   const match = parsed.find((item: any) => item.id === id);
   if (!match) return null;
@@ -198,7 +199,7 @@ const getStoredFiring = (id: string): Firing | null => {
 const getStoredHistoryFiring = (id: string): Firing | null => {
   if (typeof window === "undefined") return null;
 
-  const historyDetailStore = window.localStorage.getItem(HISTORY_DETAIL_KEY);
+  const historyDetailStore = readStorageValue(HISTORY_DETAIL_KEY);
   if (historyDetailStore) {
     try {
       const parsed = JSON.parse(historyDetailStore);
@@ -208,7 +209,7 @@ const getStoredHistoryFiring = (id: string): Firing | null => {
     }
   }
 
-  const history = window.localStorage.getItem("kiln-firing-history");
+  const history = readStorageValue("kiln-firing-history");
   const parsed = history ? JSON.parse(history) : [];
   const match = parsed.find((item: any) => item.id === id);
   if (!match) return null;
@@ -228,19 +229,42 @@ const getStoredHistoryFiring = (id: string): Firing | null => {
   };
 };
 
-const resolvePhotoUrl = (photo: string) => {
+const resolvePhotoUrl = (photo: string, index = 0) => {
   if (photo.startsWith("http")) return photo;
   if (photo.startsWith("data:") || photo.startsWith("blob:")) return photo;
-  return `https://placehold.co/1200x800?text=${encodeURIComponent(photo)}`;
+  const palette = ["#a855f7", "#6366f1", "#f97316", "#0ea5e9"];
+  const color = palette[index % palette.length];
+  const label = photo.replace(/[-_]/g, " ");
+  const svg = `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 800' preserveAspectRatio='xMidYMid slice'><rect width='1200' height='800' fill='${color}'/><text x='50%' y='50%' dominant-baseline='middle' text-anchor='middle' font-family='Inter, Arial' font-size='64' fill='white'>${label}</text></svg>`;
+  return `data:image/svg+xml,${encodeURIComponent(svg)}`;
+};
+
+const safePersist = (key: string, value: string) => {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(key, value);
+  } catch (error) {
+    console.warn(`Unable to persist ${key} to localStorage`, error);
+    try {
+      window.sessionStorage.setItem(key, value);
+    } catch (sessionError) {
+      console.warn(`Unable to persist ${key} to sessionStorage`, sessionError);
+    }
+  }
+};
+
+const readStorageValue = (key: string) => {
+  if (typeof window === "undefined") return null;
+  return window.localStorage.getItem(key) ?? window.sessionStorage.getItem(key);
 };
 
 const normalizePhotos = (photos?: (string | PhotoAsset)[]) => {
   if (!photos || photos.length === 0) return [] as PhotoAsset[];
-  return photos.map((photo) => {
+  return photos.map((photo, index) => {
     if (typeof photo === "string") {
-      return { name: photo, src: resolvePhotoUrl(photo) };
+      return { name: photo, src: resolvePhotoUrl(photo, index) };
     }
-    return { name: photo.name, src: photo.src ?? resolvePhotoUrl(photo.name) };
+    return { name: photo.name, src: photo.src ?? resolvePhotoUrl(photo.name, index) };
   });
 };
 
@@ -302,7 +326,7 @@ export default function FiringDetailPage({ params }: { params: { id: string } })
     }
 
     if (typeof window !== "undefined") {
-      const storedEvents = window.localStorage.getItem(`firing-${params.id}-events`);
+      const storedEvents = readStorageValue(`firing-${params.id}-events`);
       if (storedEvents) {
         try {
           const parsed: Activity[] = JSON.parse(storedEvents);
@@ -331,7 +355,7 @@ export default function FiringDetailPage({ params }: { params: { id: string } })
 
   useEffect(() => {
     if (typeof window === "undefined") return;
-    window.localStorage.setItem(`firing-${params.id}-events`, JSON.stringify(activities));
+    safePersist(`firing-${params.id}-events`, JSON.stringify(activities));
   }, [activities, params.id]);
 
   useEffect(() => {
@@ -372,8 +396,9 @@ export default function FiringDetailPage({ params }: { params: { id: string } })
 
     const unique = new Map<string, PhotoAsset>();
     [...loadPhotoEntries, ...activityPhotos].forEach((photo) => {
-      if (!unique.has(photo.name)) {
-        unique.set(photo.name, photo);
+      const key = `${photo.name}-${photo.src}`;
+      if (!unique.has(key)) {
+        unique.set(key, photo);
       }
     });
 
@@ -476,27 +501,28 @@ export default function FiringDetailPage({ params }: { params: { id: string } })
       setFiring(updatedFiring);
 
       if (typeof window !== "undefined") {
-        const open = window.localStorage.getItem("kiln-open-firings");
+        const open = readStorageValue("kiln-open-firings");
         const parsed = open ? JSON.parse(open) : [];
         const remaining = parsed.filter((item: any) => item.id !== firing.id);
-        window.localStorage.setItem("kiln-open-firings", JSON.stringify(remaining));
+        safePersist("kiln-open-firings", JSON.stringify(remaining));
 
-        const openDetailRaw = window.localStorage.getItem(OPEN_DETAIL_KEY);
+        const openDetailRaw = readStorageValue(OPEN_DETAIL_KEY);
         const openDetails = openDetailRaw ? JSON.parse(openDetailRaw) : {};
         if (openDetails[firing.id]) {
           delete openDetails[firing.id];
-          window.localStorage.setItem(OPEN_DETAIL_KEY, JSON.stringify(openDetails));
+          safePersist(OPEN_DETAIL_KEY, JSON.stringify(openDetails));
         }
 
-        const historyDetailRaw = window.localStorage.getItem(HISTORY_DETAIL_KEY);
+        const historyDetailRaw = readStorageValue(HISTORY_DETAIL_KEY);
         const historyDetails = historyDetailRaw ? JSON.parse(historyDetailRaw) : {};
         const closedDetail: Firing = {
           ...firing,
           status: "closed",
           endTime,
           maxTemp: activity.pyrometerTemp ?? firing.maxTemp,
+          loadPhotos: allPhotos,
         };
-        window.localStorage.setItem(
+        safePersist(
           HISTORY_DETAIL_KEY,
           JSON.stringify({
             ...historyDetails,
@@ -504,9 +530,9 @@ export default function FiringDetailPage({ params }: { params: { id: string } })
           }),
         );
 
-        const history = window.localStorage.getItem("kiln-firing-history");
+        const history = readStorageValue("kiln-firing-history");
         const historyParsed = history ? JSON.parse(history) : [];
-        window.localStorage.setItem(
+        safePersist(
           "kiln-firing-history",
           JSON.stringify([
             ...historyParsed,
@@ -522,6 +548,8 @@ export default function FiringDetailPage({ params }: { params: { id: string } })
               tempReached: activity.pyrometerTemp ?? firing.maxTemp,
               status: "Completed",
               endTime,
+              loadPhotos: allPhotos,
+              firstPhoto: allPhotos[0],
             },
           ]),
         );
@@ -614,13 +642,10 @@ export default function FiringDetailPage({ params }: { params: { id: string } })
                         onClick={() => openPhotoAtIndex(galleryIndex === -1 ? 0 : galleryIndex)}
                         className="group relative overflow-hidden rounded-2xl border border-purple-100 bg-purple-50/60 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
                       >
-                        <Image
+                        <img
                           src={photo.src}
                           alt={photo.name}
-                          width={800}
-                          height={600}
                           className="h-32 w-full object-cover"
-                          sizes="(min-width: 1024px) 33vw, (min-width: 640px) 45vw, 90vw"
                         />
                         <span className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/60 to-transparent px-3 py-2 text-left text-xs font-semibold text-white">
                           {photo.name}
@@ -782,13 +807,10 @@ export default function FiringDetailPage({ params }: { params: { id: string } })
                         className="overflow-hidden rounded-xl border border-purple-100 bg-white shadow-sm"
                         aria-label={`${photo.name} preview`}
                       >
-                        <Image
+                        <img
                           src={photo.src}
                           alt={photo.name}
-                          width={200}
-                          height={150}
                           className="h-20 w-full object-cover"
-                          sizes="160px"
                         />
                         <p className="truncate px-2 py-1 text-[10px] font-semibold text-gray-700">{photo.name}</p>
                       </div>
@@ -863,14 +885,11 @@ export default function FiringDetailPage({ params }: { params: { id: string } })
                             onClick={() => openPhotoAtIndex(galleryIndex === -1 ? 0 : galleryIndex)}
                             className="group relative overflow-hidden rounded-xl border border-purple-100 bg-purple-50/60 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
                           >
-                            <Image
-                              src={photo.src}
-                              alt={photo.name}
-                              width={320}
-                              height={240}
-                              className="h-20 w-28 object-cover"
-                              sizes="120px"
-                            />
+                        <img
+                          src={photo.src}
+                          alt={photo.name}
+                          className="h-20 w-28 object-cover"
+                        />
                             <span className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/60 to-transparent px-2 py-1 text-left text-[10px] font-semibold text-white">
                               {photo.name}
                             </span>
@@ -932,13 +951,10 @@ export default function FiringDetailPage({ params }: { params: { id: string } })
               </div>
 
               <div className="flex flex-col items-center gap-4">
-                <Image
+                <img
                   src={allPhotos[activePhotoIndex].src}
                   alt={allPhotos[activePhotoIndex].name}
-                  width={1200}
-                  height={800}
                   className="max-h-[70vh] w-full rounded-2xl object-contain"
-                  sizes="(min-width: 1024px) 70vw, 90vw"
                 />
                 <p className="text-sm font-semibold text-gray-800">{allPhotos[activePhotoIndex].name}</p>
                 {allPhotos.length > 1 && (
