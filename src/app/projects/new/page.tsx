@@ -27,21 +27,6 @@ export default function NewProjectPage() {
     makerName: "",
     notes: "",
   });
-  const [projectFiles, setProjectFiles] = useState<File[]>([]);
-
-  const clayBodyOptions = useMemo(() => initialClayBodies, []);
-  const bisqueConeOptions = useMemo(() => coneChart, []);
-  const makerOptions = useMemo(
-    () => initialUsers.map((user) => ({ ...user, fullName: `${user.firstName} ${user.lastName}` })),
-    []
-  );
-
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (!e.target.files) return;
-
-    const selectedFiles = Array.from(e.target.files);
-    setProjectFiles((prev) => [...prev, ...selectedFiles]);
-  };
 
   const clayBodyOptions = useMemo(() => initialClayBodies, []);
   const bisqueConeOptions = useMemo(() => coneChart, []);
@@ -141,6 +126,7 @@ export default function NewProjectPage() {
 
               <div className="space-y-2">
                 <label className="block text-sm font-semibold text-gray-800">Maker</label>
+                <p className="text-xs text-gray-600">Choose a studio member from the admin users list.</p>
                 <select
                   className="mt-1 w-full rounded-xl border border-purple-200 bg-white px-3 py-2 text-sm shadow-inner focus:border-purple-400 focus:outline-none"
                   value={form.makerName}
@@ -193,60 +179,29 @@ export default function NewProjectPage() {
             </div>
           </form>
 
-          <aside className="space-y-4 rounded-3xl bg-white/95 p-6 shadow-lg ring-1 ring-purple-100">
-            <div className="flex items-start justify-between gap-3">
+          <aside className="space-y-4 rounded-3xl bg-gradient-to-br from-purple-600 via-purple-500 to-indigo-500 p-6 text-white shadow-xl">
+            <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs font-semibold uppercase tracking-wide text-purple-700">Project files</p>
-                <h2 className="text-xl font-bold text-gray-900">Upload references</h2>
-                <p className="text-sm text-gray-600">Drop sketches, glaze tests, or inspiration to keep everything together.</p>
+                <p className="text-xs font-semibold uppercase tracking-wide text-purple-100">Quick tips</p>
+                <h2 className="text-xl font-bold">Better project handoffs</h2>
               </div>
-              <span className="rounded-full bg-purple-50 px-3 py-1 text-xs font-semibold text-purple-700">Images</span>
+              <span className="rounded-full bg-white/20 px-3 py-1 text-xs font-semibold">Studio</span>
             </div>
 
-            <label
-              className="flex cursor-pointer flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed border-purple-200 bg-purple-50/60 px-4 py-6 text-center text-sm text-purple-800 transition hover:border-purple-300 hover:bg-purple-50"
-            >
-              <input
-                type="file"
-                accept="image/*"
-                multiple
-                className="hidden"
-                onChange={handleFileUpload}
-              />
-              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-white text-xl text-purple-600 shadow-inner">📁</div>
-              <div>
-                <p className="font-semibold">Add images</p>
-                <p className="text-xs text-purple-700">PNG, JPG up to 10MB each</p>
-              </div>
-            </label>
-
-            <div className="space-y-3">
-              <div className="flex items-center justify-between text-xs font-semibold text-gray-700">
-                <span>File library</span>
-                <span className="rounded-full bg-purple-50 px-2 py-1 text-[11px] text-purple-700">{projectFiles.length} file{projectFiles.length === 1 ? "" : "s"}</span>
-              </div>
-              <div className="grid grid-cols-2 gap-3 md:grid-cols-1">
-                {projectFiles.length === 0 && (
-                  <div className="rounded-xl border border-dashed border-gray-200 bg-gray-50 px-3 py-4 text-center text-xs text-gray-500">
-                    No files yet. Upload images to share kiln-ready context.
-                  </div>
-                )}
-                {projectFiles.map((file, index) => (
-                  <div
-                    key={`${file.name}-${index}`}
-                    className="flex items-center gap-3 rounded-xl border border-purple-100 bg-white px-3 py-2 shadow-sm"
-                  >
-                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-purple-50 text-lg text-purple-600">
-                      🖼️
-                    </div>
-                    <div className="min-w-0 text-sm">
-                      <p className="truncate font-semibold text-gray-900">{file.name}</p>
-                      <p className="text-xs text-gray-500">{Math.round(file.size / 1024)} KB</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
+            <ul className="space-y-3 text-sm text-purple-50">
+              <li className="flex gap-3">
+                <span className="mt-0.5 inline-flex h-6 w-6 items-center justify-center rounded-full bg-white/20 text-xs font-bold">1</span>
+                Store clay bodies from the admin → pottery tab so new projects stay consistent.
+              </li>
+              <li className="flex gap-3">
+                <span className="mt-0.5 inline-flex h-6 w-6 items-center justify-center rounded-full bg-white/20 text-xs font-bold">2</span>
+                Match bisque cones to the kiln → firing temps list to avoid guesswork.
+              </li>
+              <li className="flex gap-3">
+                <span className="mt-0.5 inline-flex h-6 w-6 items-center justify-center rounded-full bg-white/20 text-xs font-bold">3</span>
+                Assign makers from the admin → users tab so firing updates reach the right person.
+              </li>
+            </ul>
           </aside>
         </div>
       </div>
