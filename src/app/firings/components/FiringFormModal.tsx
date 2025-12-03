@@ -183,12 +183,12 @@ export function FiringFormModal({ open, onClose, mode = "create", initialData }:
       notes: form.notes || undefined,
     };
 
-    window.localStorage.setItem(
+    safePersist(
       "kiln-open-firings",
       JSON.stringify([...parsed, openFiringEntry]),
     );
 
-    window.localStorage.setItem(
+    safePersist(
       "kiln-open-firing-details",
       JSON.stringify({
         ...detailsStore,
