@@ -38,7 +38,7 @@ type Firing = {
   startTime: string;
   endTime?: string;
   maxTemp?: number;
-  loadPhotos?: string[];
+  loadPhotos?: (string | PhotoAsset)[];
   pieces?: { name: string; notes?: string }[];
   notes?: string;
 };
@@ -230,6 +230,7 @@ const getStoredHistoryFiring = (id: string): Firing | null => {
 
 const resolvePhotoUrl = (photo: string) => {
   if (photo.startsWith("http")) return photo;
+  if (photo.startsWith("data:") || photo.startsWith("blob:")) return photo;
   return `https://placehold.co/1200x800?text=${encodeURIComponent(photo)}`;
 };
 
@@ -364,10 +365,7 @@ export default function FiringDetailPage({ params }: { params: { id: string } })
     [activities],
   );
 
-  const loadPhotoEntries = useMemo(
-    () => (firing?.loadPhotos ?? []).map((name) => ({ name, src: resolvePhotoUrl(name) })),
-    [firing?.loadPhotos],
-  );
+  const loadPhotoEntries = useMemo(() => normalizePhotos(firing?.loadPhotos), [firing?.loadPhotos]);
 
   const allPhotos = useMemo(() => {
     const activityPhotos = activities.flatMap((activity) => normalizePhotos(activity.photos));
