@@ -27,6 +27,7 @@ export default function NewProjectPage() {
     makerName: "",
     notes: "",
   });
+  const [selectedImageNames, setSelectedImageNames] = useState<string[]>([]);
 
   const clayBodyOptions = useMemo(() => initialClayBodies, []);
   const bisqueConeOptions = useMemo(() => coneChart, []);
@@ -188,6 +189,43 @@ export default function NewProjectPage() {
             <div className="rounded-2xl border border-white/30 bg-white/10 p-4 text-sm text-purple-50">
               Once image uploads are ready, you will be able to attach reference shots, kiln logs, or glaze tests to this
               project.
+            </div>
+
+            <div className="space-y-2 rounded-2xl border border-dashed border-white/50 bg-white/5 p-4">
+              <label
+                htmlFor="firing-photos"
+                className="inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-white px-4 py-2 text-sm font-semibold text-purple-700 shadow hover:bg-purple-50"
+              >
+                Upload firing photos
+                <span className="text-xs font-normal text-purple-500">(multiple allowed)</span>
+              </label>
+              <input
+                id="firing-photos"
+                type="file"
+                accept="image/*"
+                multiple
+                className="sr-only"
+                onChange={(event) =>
+                  setSelectedImageNames(
+                    Array.from(event.target.files || []).map((file) => file.name)
+                  )
+                }
+              />
+
+              {selectedImageNames.length > 0 ? (
+                <div className="space-y-1 text-xs text-purple-100">
+                  <p className="font-semibold">Selected {selectedImageNames.length} image(s):</p>
+                  <ul className="space-y-1">
+                    {selectedImageNames.map((name) => (
+                      <li key={name} className="truncate" title={name}>
+                        • {name}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ) : (
+                <p className="text-xs text-purple-100">Choose images from your photo library to upload later.</p>
+              )}
             </div>
           </aside>
         </div>
