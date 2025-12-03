@@ -80,6 +80,20 @@ const readFilesAsPhotos = async (files: File[]): Promise<PhotoAsset[]> => {
   return Promise.all(readers);
 };
 
+const safePersist = (key: string, value: string) => {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(key, value);
+  } catch (error) {
+    console.warn(`Unable to persist ${key} to localStorage`, error);
+    try {
+      window.sessionStorage.setItem(key, value);
+    } catch (sessionError) {
+      console.warn(`Unable to persist ${key} to sessionStorage`, sessionError);
+    }
+  }
+};
+
 export function FiringFormModal({ open, onClose, mode = "create", initialData }: FiringFormModalProps) {
   const router = useRouter();
   const createFiring = useCreateFiring();
@@ -143,6 +157,8 @@ export function FiringFormModal({ open, onClose, mode = "create", initialData }:
     const detailStoreRaw = window.localStorage.getItem("kiln-open-firing-details");
     const detailsStore = detailStoreRaw ? JSON.parse(detailStoreRaw) : {};
 
+    const reducedPhotos = form.loadPhotos.map((photo) => photo.name);
+
     const openFiringEntry = {
       id: payload.id,
       kilnName: kiln?.name ?? "Unknown kiln",
@@ -150,8 +166,8 @@ export function FiringFormModal({ open, onClose, mode = "create", initialData }:
       targetCone: payload.target_cone,
       targetTemp: payload.target_temp,
       startedAt: payload.start_time,
-      loadPhotos: form.loadPhotos,
-      firstPhoto: form.loadPhotos[0],
+      loadPhotos: reducedPhotos,
+      firstPhoto: reducedPhotos[0],
     };
 
     const firingDetail = {
@@ -164,16 +180,13 @@ export function FiringFormModal({ open, onClose, mode = "create", initialData }:
       targetCone: payload.target_cone,
       targetTemp: payload.target_temp ?? undefined,
       startTime: payload.start_time,
-      loadPhotos: form.loadPhotos,
+      loadPhotos: reducedPhotos,
       notes: form.notes || undefined,
     };
 
-    window.localStorage.setItem(
-      "kiln-open-firings",
-      JSON.stringify([...parsed, openFiringEntry]),
-    );
+    safePersist("kiln-open-firings", JSON.stringify([...parsed, openFiringEntry]));
 
-    window.localStorage.setItem(
+    safePersist(
       "kiln-open-firing-details",
       JSON.stringify({
         ...detailsStore,
