@@ -80,20 +80,6 @@ const readFilesAsPhotos = async (files: File[]): Promise<PhotoAsset[]> => {
   return Promise.all(readers);
 };
 
-const safePersist = (key: string, value: string) => {
-  if (typeof window === "undefined") return;
-  try {
-    window.localStorage.setItem(key, value);
-  } catch (error) {
-    console.warn(`Unable to persist ${key} to localStorage`, error);
-    try {
-      window.sessionStorage.setItem(key, value);
-    } catch (sessionError) {
-      console.warn(`Unable to persist ${key} to sessionStorage`, sessionError);
-    }
-  }
-};
-
 export function FiringFormModal({ open, onClose, mode = "create", initialData }: FiringFormModalProps) {
   const router = useRouter();
   const createFiring = useCreateFiring();
@@ -166,8 +152,8 @@ export function FiringFormModal({ open, onClose, mode = "create", initialData }:
       targetCone: payload.target_cone,
       targetTemp: payload.target_temp,
       startedAt: payload.start_time,
-      loadPhotos: reducedPhotos,
-      firstPhoto: reducedPhotos[0],
+      loadPhotos: form.loadPhotos,
+      firstPhoto: form.loadPhotos[0],
     };
 
     const firingDetail = {
@@ -180,7 +166,7 @@ export function FiringFormModal({ open, onClose, mode = "create", initialData }:
       targetCone: payload.target_cone,
       targetTemp: payload.target_temp ?? undefined,
       startTime: payload.start_time,
-      loadPhotos: reducedPhotos,
+      loadPhotos: form.loadPhotos,
       notes: form.notes || undefined,
     };
 
