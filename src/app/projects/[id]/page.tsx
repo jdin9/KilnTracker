@@ -5,7 +5,9 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { formatDate } from "@/lib/dateFormat";
-import { loadStoredProjects, StoredProject } from "@/lib/projectStorage";
+import { coneChart, getConeTemperature } from "@/lib/coneReference";
+import { getActiveStudioColors, initialStudioColors } from "@/lib/studioColors";
+import { loadStoredProjects, saveStoredProject, StoredProject } from "@/lib/projectStorage";
 
 // TODO: replace with trpc.project.detail.useQuery
 const mockProject = {
@@ -40,8 +42,15 @@ const mockProject = {
 
 export default function ProjectDetailPage({ params }: { params: { id: string } }) {
   const [data, setData] = useState<StoredProject | null | "loading">("loading");
+  const [activityType, setActivityType] = useState<"glaze" | "fire">("glaze");
+  const [glazeColor, setGlazeColor] = useState("");
+  const [glazeCoats, setGlazeCoats] = useState("1");
+  const [glazeNotes, setGlazeNotes] = useState("");
+  const [firingCone, setFiringCone] = useState("");
+  const [firingNotes, setFiringNotes] = useState("");
 
   const storedProjects = useMemo(() => loadStoredProjects(), []);
+  const activeColors = useMemo(() => getActiveStudioColors(initialStudioColors), []);
 
   useEffect(() => {
     const storedMatch = storedProjects.find((project) => project.id === params.id);
@@ -66,6 +75,60 @@ export default function ProjectDetailPage({ params }: { params: { id: string } }
 
     setData(null);
   }, [params.id, storedProjects]);
+
+  const handleAddActivity = (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!data || data === "loading") return;
+
+    if (activityType === "glaze" && !glazeColor) {
+      return;
+    }
+
+    if (activityType === "fire" && !firingCone) {
+      return;
+    }
+
+    const newStep =
+      activityType === "glaze"
+        ? {
+            id: `step-${Date.now()}`,
+            type: "glaze" as const,
+            glazeName: glazeColor,
+            numCoats: Number(glazeCoats) || 0,
+            applicationMethod: "unspecified",
+            patternDescription: "",
+            notes: glazeNotes || undefined,
+            photos: [],
+          }
+        : {
+            id: `step-${Date.now()}`,
+            type: "firing" as const,
+            firingId: undefined,
+            cone: firingCone,
+            peakTemp: getConeTemperature(firingCone),
+            firingDate: new Date().toISOString(),
+            notes: firingNotes || undefined,
+            photos: [],
+          };
+
+    setData((prev) => {
+      if (!prev || prev === "loading") return prev;
+      const updated = { ...prev, steps: [...prev.steps, newStep] };
+      if (params.id !== mockProject.id) {
+        saveStoredProject(updated);
+      }
+      return updated;
+    });
+
+    if (activityType === "glaze") {
+      setGlazeColor("");
+      setGlazeCoats("1");
+      setGlazeNotes("");
+    } else {
+      setFiringCone("");
+      setFiringNotes("");
+    }
+  };
 
   if (data === "loading") {
     return (
@@ -154,7 +217,7 @@ export default function ProjectDetailPage({ params }: { params: { id: string } }
                       <div className="mt-3 grid gap-2 text-sm text-gray-800 md:grid-cols-2">
                         <div className="rounded-xl bg-purple-50 px-3 py-2">
                           <p className="text-xs font-semibold text-purple-800">Glaze</p>
-                          <p className="font-medium">{step.glazeName}</p>
+                          <p className="font-medium">{step.glazeName || "Unspecified glaze"}</p>
                         </div>
                         <div className="rounded-xl bg-purple-50 px-3 py-2">
                           <p className="text-xs font-semibold text-purple-800">Coats</p>
@@ -162,11 +225,11 @@ export default function ProjectDetailPage({ params }: { params: { id: string } }
                         </div>
                         <div className="rounded-xl bg-purple-50 px-3 py-2">
                           <p className="text-xs font-semibold text-purple-800">Application</p>
-                          <p className="font-medium capitalize">{step.applicationMethod}</p>
+                          <p className="font-medium capitalize">{step.applicationMethod || "Not specified"}</p>
                         </div>
                         <div className="rounded-xl bg-purple-50 px-3 py-2">
                           <p className="text-xs font-semibold text-purple-800">Pattern</p>
-                          <p className="font-medium">{step.patternDescription}</p>
+                          <p className="font-medium">{step.patternDescription || "Not specified"}</p>
                         </div>
                         {step.notes && (
                           <div className="md:col-span-2 rounded-xl bg-gray-50 px-3 py-2">
@@ -183,12 +246,18 @@ export default function ProjectDetailPage({ params }: { params: { id: string } }
                         </div>
                         <div className="rounded-xl bg-indigo-50 px-3 py-2">
                           <p className="text-xs font-semibold text-indigo-800">Peak temp</p>
-                          <p className="font-medium">{step.peakTemp ?? "—"}°F</p>
+                          <p className="font-medium">{step.peakTemp !== undefined ? `${step.peakTemp}°F` : "—"}</p>
                         </div>
                         <div className="rounded-xl bg-indigo-50 px-3 py-2">
                           <p className="text-xs font-semibold text-indigo-800">Date</p>
                           <p className="font-medium">{step.firingDate ? formatDate(step.firingDate) : "—"}</p>
                         </div>
+                        {step.notes && (
+                          <div className="md:col-span-3 rounded-xl bg-gray-50 px-3 py-2">
+                            <p className="text-xs font-semibold text-gray-700">Notes</p>
+                            <p className="text-gray-800">{step.notes}</p>
+                          </div>
+                        )}
                       </div>
                     )}
 
@@ -216,26 +285,113 @@ export default function ProjectDetailPage({ params }: { params: { id: string } }
           <aside className="space-y-4 rounded-3xl bg-gradient-to-br from-purple-600 via-purple-500 to-indigo-500 p-6 text-white shadow-xl">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs font-semibold uppercase tracking-wide text-purple-100">Studio highlights</p>
-                <h2 className="text-xl font-bold">What to track next</h2>
+                <p className="text-xs font-semibold uppercase tracking-wide text-purple-100">Add activity</p>
+                <h2 className="text-xl font-bold">Log a new step</h2>
               </div>
-              <span className="rounded-full bg-white/20 px-3 py-1 text-xs font-semibold">Timeline</span>
+              <span className="rounded-full bg-white/20 px-3 py-1 text-xs font-semibold">Project</span>
             </div>
 
-            <ul className="space-y-3 text-sm text-purple-50">
-              <li className="flex gap-3">
-                <span className="mt-0.5 inline-flex h-6 w-6 items-center justify-center rounded-full bg-white/20 text-xs font-bold">1</span>
-                Drop glaze combinations and application notes as you test.
-              </li>
-              <li className="flex gap-3">
-                <span className="mt-0.5 inline-flex h-6 w-6 items-center justify-center rounded-full bg-white/20 text-xs font-bold">2</span>
-                Link kiln firings so each cone and soak is easy to reference.
-              </li>
-              <li className="flex gap-3">
-                <span className="mt-0.5 inline-flex h-6 w-6 items-center justify-center rounded-full bg-white/20 text-xs font-bold">3</span>
-                Attach photos to compare surface results across steps.
-              </li>
-            </ul>
+            <form className="space-y-4" onSubmit={handleAddActivity}>
+              <div className="space-y-2">
+                <label className="block text-sm font-semibold text-purple-50">Activity</label>
+                <select
+                  className="w-full rounded-xl border border-white/30 bg-white/10 px-3 py-2 text-sm text-white shadow-inner focus:border-white focus:outline-none"
+                  value={activityType}
+                  onChange={(e) => setActivityType(e.target.value as "glaze" | "fire")}
+                >
+                  <option value="glaze" className="text-gray-900">
+                    Glaze
+                  </option>
+                  <option value="fire" className="text-gray-900">
+                    Fire
+                  </option>
+                </select>
+              </div>
+
+              {activityType === "glaze" ? (
+                <div className="space-y-3 rounded-2xl border border-white/20 bg-white/5 p-4">
+                  <div className="space-y-2">
+                    <label className="block text-xs font-semibold text-purple-100">Colour</label>
+                    <select
+                      className="w-full rounded-lg border border-white/30 bg-white/10 px-3 py-2 text-sm text-white shadow-inner focus:border-white focus:outline-none"
+                      value={glazeColor}
+                      onChange={(e) => setGlazeColor(e.target.value)}
+                      required
+                    >
+                      <option value="" className="text-gray-900">
+                        Choose a colour
+                      </option>
+                      {activeColors.map((color) => (
+                        <option key={color.id} value={color.name} className="text-gray-900">
+                          {color.name} · {color.brand}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="block text-xs font-semibold text-purple-100">Coats</label>
+                    <input
+                      type="number"
+                      min={0}
+                      className="w-full rounded-lg border border-white/30 bg-white/10 px-3 py-2 text-sm text-white shadow-inner focus:border-white focus:outline-none"
+                      value={glazeCoats}
+                      onChange={(e) => setGlazeCoats(e.target.value)}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="block text-xs font-semibold text-purple-100">Notes</label>
+                    <textarea
+                      className="w-full rounded-lg border border-white/30 bg-white/10 px-3 py-2 text-sm text-white shadow-inner focus:border-white focus:outline-none"
+                      value={glazeNotes}
+                      onChange={(e) => setGlazeNotes(e.target.value)}
+                      rows={3}
+                      placeholder="Application method, pattern, or surface notes"
+                    />
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-3 rounded-2xl border border-white/20 bg-white/5 p-4">
+                  <div className="space-y-2">
+                    <label className="block text-xs font-semibold text-purple-100">Cone</label>
+                    <select
+                      className="w-full rounded-lg border border-white/30 bg-white/10 px-3 py-2 text-sm text-white shadow-inner focus:border-white focus:outline-none"
+                      value={firingCone}
+                      onChange={(e) => setFiringCone(e.target.value)}
+                      required
+                    >
+                      <option value="" className="text-gray-900">
+                        Choose a cone
+                      </option>
+                      {coneChart.map((entry) => (
+                        <option key={entry.cone} value={entry.cone} className="text-gray-900">
+                          Cone {entry.cone} ({entry.temperatureF}°F)
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="block text-xs font-semibold text-purple-100">Notes</label>
+                    <textarea
+                      className="w-full rounded-lg border border-white/30 bg-white/10 px-3 py-2 text-sm text-white shadow-inner focus:border-white focus:outline-none"
+                      value={firingNotes}
+                      onChange={(e) => setFiringNotes(e.target.value)}
+                      rows={3}
+                      placeholder="Kiln location, soak time, or atmosphere"
+                    />
+                  </div>
+                </div>
+              )}
+
+              <button
+                type="submit"
+                className="w-full rounded-full bg-white px-4 py-2 text-sm font-semibold text-purple-700 shadow hover:-translate-y-0.5 hover:bg-purple-50"
+              >
+                Add activity to timeline
+              </button>
+            </form>
           </aside>
         </div>
       </div>
