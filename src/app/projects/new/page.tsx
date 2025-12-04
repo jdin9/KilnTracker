@@ -190,7 +190,6 @@ export default function NewProjectPage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-wide text-purple-100">Image Upload</p>
-                <h2 className="text-xl font-bold">Add firing photos soon</h2>
               </div>
               <span className="rounded-full bg-white/20 px-3 py-1 text-xs font-semibold">Preview</span>
             </div>
