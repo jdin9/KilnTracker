@@ -189,6 +189,28 @@ export default function ProjectDetailPage({ params }: { params: { id: string } }
               </div>
             )}
 
+            {data.photos?.length ? (
+              <div className="space-y-2 rounded-2xl border border-purple-100 bg-white p-4 shadow-sm">
+                <div className="flex items-center justify-between">
+                  <h2 className="text-sm font-semibold text-gray-900">Project photos</h2>
+                  <span className="text-xs font-semibold uppercase tracking-wide text-purple-700">
+                    {data.photos.length} image{data.photos.length > 1 ? "s" : ""}
+                  </span>
+                </div>
+                <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
+                  {data.photos.map((photo) => (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      key={photo.id}
+                      src={photo.url}
+                      alt={photo.name}
+                      className="h-32 w-full rounded-lg object-cover shadow-sm"
+                    />
+                  ))}
+                </div>
+              </div>
+            ) : null}
+
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <h2 className="text-xl font-semibold text-gray-900">Process timeline</h2>

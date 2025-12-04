@@ -27,6 +27,7 @@ export default function NewProjectPage() {
     makerName: "",
     notes: "",
   });
+  const [initialPhotos, setInitialPhotos] = useState<File[]>([]);
   const [selectedImageNames, setSelectedImageNames] = useState<string[]>([]);
 
   const clayBodyOptions = useMemo(() => initialClayBodies, []);
@@ -48,6 +49,11 @@ export default function NewProjectPage() {
       maker_name: form.makerName || undefined,
       notes: form.notes || undefined,
     });
+    const initialPhotoEntries = initialPhotos.map((file, index) => ({
+      id: `project-photo-${Date.now()}-${index}`,
+      name: file.name,
+      url: URL.createObjectURL(file),
+    }));
     saveStoredProject({
       id: res.id,
       title: form.title || "Untitled Project",
@@ -59,6 +65,8 @@ export default function NewProjectPage() {
       bisqueTemp: form.bisqueCone
         ? bisqueConeOptions.find((entry) => entry.cone === form.bisqueCone)?.temperatureF
         : undefined,
+      photos: initialPhotoEntries,
+      coverPhoto: initialPhotoEntries[0],
       glazes: [],
       steps: [],
     });
@@ -200,11 +208,11 @@ export default function NewProjectPage() {
                 accept="image/*"
                 multiple
                 className="sr-only"
-                onChange={(event) =>
-                  setSelectedImageNames(
-                    Array.from(event.target.files || []).map((file) => file.name)
-                  )
-                }
+                onChange={(event) => {
+                  const files = Array.from(event.target.files || []);
+                  setInitialPhotos(files);
+                  setSelectedImageNames(files.map((file) => file.name));
+                }}
               />
 
               {selectedImageNames.length > 0 ? (
