@@ -1,6 +1,7 @@
 import { TRPCError } from '@trpc/server';
-import { FiringStatus, type Firing, type User } from '@prisma/client';
+import { FiringStatus, type Firing } from '@prisma/client';
 import type { Context } from '../trpc/context';
+import type { SessionUser } from '../auth/types';
 import type {
   CompleteFiringInput,
   CreateFiringInput,
@@ -14,7 +15,7 @@ function assertFiringIsOngoing(firing: Firing) {
   }
 }
 
-async function ensureFiring(ctx: Context, user: User, firingId: string) {
+async function ensureFiring(ctx: Context, user: SessionUser, firingId: string) {
   const firing = await ctx.prisma.firing.findFirst({
     where: {
       id: firingId,
@@ -29,7 +30,7 @@ async function ensureFiring(ctx: Context, user: User, firingId: string) {
   return firing;
 }
 
-export async function createFiring(ctx: Context, user: User, input: CreateFiringInput) {
+export async function createFiring(ctx: Context, user: SessionUser, input: CreateFiringInput) {
   const kiln = await ctx.prisma.kiln.findFirst({
     where: { id: input.kilnId, studioId: user.studioId },
   });
@@ -54,7 +55,7 @@ export async function createFiring(ctx: Context, user: User, input: CreateFiring
   return firing;
 }
 
-export async function appendFiringEvent(ctx: Context, user: User, input: FiringEventInput) {
+export async function appendFiringEvent(ctx: Context, user: SessionUser, input: FiringEventInput) {
   const firing = await ensureFiring(ctx, user, input.firingId);
   assertFiringIsOngoing(firing);
 
@@ -79,7 +80,7 @@ export async function appendFiringEvent(ctx: Context, user: User, input: FiringE
   return events;
 }
 
-export async function completeFiring(ctx: Context, user: User, input: CompleteFiringInput) {
+export async function completeFiring(ctx: Context, user: SessionUser, input: CompleteFiringInput) {
   const firing = await ensureFiring(ctx, user, input.firingId);
   assertFiringIsOngoing(firing);
 
@@ -110,7 +111,7 @@ export async function completeFiring(ctx: Context, user: User, input: CompleteFi
   return updated;
 }
 
-export async function deleteFiring(ctx: Context, user: User, firingId: string) {
+export async function deleteFiring(ctx: Context, user: SessionUser, firingId: string) {
   await ensureFiring(ctx, user, firingId);
 
   await ctx.prisma.firing.delete({ where: { id: firingId } });
@@ -134,7 +135,7 @@ type FiringSummary = {
   notes: string | null;
 };
 
-export async function listFirings(ctx: Context, user: User, filters: ListFiringFiltersInput) {
+export async function listFirings(ctx: Context, user: SessionUser, filters: ListFiringFiltersInput) {
   const where: any = {
     kiln: { studioId: user.studioId },
   };

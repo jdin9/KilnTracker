@@ -1,13 +1,14 @@
 import { TRPCError } from '@trpc/server';
-import { ApplicationMethod, ProjectStep, StepType, type Firing, type User } from '@prisma/client';
+import { ApplicationMethod, ProjectStep, StepType, type Firing } from '@prisma/client';
 import type { Context } from '../trpc/context';
+import type { SessionUser } from '../auth/types';
 import type {
   AddFiringStepInput,
   AddGlazeStepInput,
   CreateProjectInput,
 } from '../schemas/projectSchemas';
 
-async function ensureProject(ctx: Context, user: User, projectId: string) {
+async function ensureProject(ctx: Context, user: SessionUser, projectId: string) {
   const project = await ctx.prisma.project.findFirst({
     where: { id: projectId, studioId: user.studioId },
   });
@@ -72,7 +73,7 @@ async function fetchProjectDetail(ctx: Context, projectId: string, studioId: str
   return { ...project, steps: stepsWithDerived, coverPhoto };
 }
 
-export async function createProject(ctx: Context, user: User, input: CreateProjectInput) {
+export async function createProject(ctx: Context, user: SessionUser, input: CreateProjectInput) {
   const clayBody = await ctx.prisma.clayBody.findFirst({
     where: { id: input.clayBodyId, studioId: user.studioId },
   });
@@ -97,7 +98,7 @@ export async function createProject(ctx: Context, user: User, input: CreateProje
   return project;
 }
 
-export async function addGlazeStep(ctx: Context, user: User, input: AddGlazeStepInput) {
+export async function addGlazeStep(ctx: Context, user: SessionUser, input: AddGlazeStepInput) {
   await ensureProject(ctx, user, input.projectId);
 
   const glaze = await ctx.prisma.glaze.findFirst({
@@ -141,7 +142,7 @@ export async function addGlazeStep(ctx: Context, user: User, input: AddGlazeStep
   return steps.map((s) => enrichFiringStepWithDerivedData(s));
 }
 
-export async function addFiringStep(ctx: Context, user: User, input: AddFiringStepInput) {
+export async function addFiringStep(ctx: Context, user: SessionUser, input: AddFiringStepInput) {
   await ensureProject(ctx, user, input.projectId);
 
   let firing: Firing | null = null;
@@ -188,6 +189,6 @@ export async function addFiringStep(ctx: Context, user: User, input: AddFiringSt
   return steps.map((s) => enrichFiringStepWithDerivedData(s));
 }
 
-export async function getProjectDetail(ctx: Context, user: User, projectId: string) {
+export async function getProjectDetail(ctx: Context, user: SessionUser, projectId: string) {
   return fetchProjectDetail(ctx, projectId, user.studioId);
 }
