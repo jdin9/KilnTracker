@@ -19,12 +19,19 @@ export default function HomePage() {
               Choose where you want to work today.
             </p>
           </div>
-          {isAdmin && (
+          {isAdmin ? (
             <Link
               href="/admin"
               className="rounded-full border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-800 shadow-sm transition hover:border-purple-200 hover:text-purple-800"
             >
               Admin Panel
+            </Link>
+          ) : (
+            <Link
+              href="/login"
+              className="rounded-full border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-800 shadow-sm transition hover:border-purple-200 hover:text-purple-800"
+            >
+              Admin sign in
             </Link>
           )}
         </div>

@@ -11,16 +11,16 @@ export default function UnauthorizedPage() {
         </p>
         <div className="flex items-center justify-center gap-3 pt-2">
           <Link
-            href="/"
+            href="/login"
             className="rounded-full border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-800 shadow-sm transition hover:border-orange-200 hover:text-orange-800"
           >
-            Return home
+            Sign in as admin
           </Link>
           <Link
-            href="/kiln"
+            href="/"
             className="rounded-full bg-orange-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-orange-700"
           >
-            Continue to kilns
+            Return home
           </Link>
         </div>
       </div>

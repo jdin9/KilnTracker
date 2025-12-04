@@ -6,7 +6,11 @@ import AdminDashboard from "./AdminDashboard";
 export default function AdminPage() {
   const currentUser = getSessionUser();
 
-  if (!currentUser || currentUser.role !== "ADMIN") {
+  if (!currentUser) {
+    redirect("/login");
+  }
+
+  if (currentUser.role !== "ADMIN") {
     redirect("/unauthorized");
   }
 
