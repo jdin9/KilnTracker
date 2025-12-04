@@ -1,5 +1,7 @@
+import { cookies } from 'next/headers';
+
 import { prisma } from '../../db/client';
-import { getSession } from '../auth/session';
+import { getSessionUser } from '../auth/session';
 import type { SessionUser } from '../auth/types';
 
 export interface Context {
@@ -9,11 +11,12 @@ export interface Context {
 }
 
 export async function createContext(): Promise<Context> {
-  const session = await getSession();
+  const sessionToken = cookies().get('kiln.session-token')?.value ?? null;
+  const currentUser = getSessionUser();
 
   return {
     prisma,
-    currentUser: session?.user ?? null,
-    sessionToken: session?.token ?? null,
+    currentUser,
+    sessionToken,
   };
 }

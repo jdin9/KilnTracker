@@ -7,11 +7,6 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-enum UserRole {
-  ADMIN
-  MEMBER
-}
-
 enum ControlType {
   MANUAL_SWITCHES
   MANUAL_DIAL
@@ -67,7 +62,6 @@ enum ApplicationMethod {
 model Studio {
   id         String     @id @default(cuid())
   name       String
-  joinPasswordHash String
   notes      String?
   createdAt  DateTime   @default(now())
   updatedAt  DateTime   @updatedAt
@@ -78,8 +72,6 @@ model Studio {
   clayBodies ClayBody[]
   projects   Project[]
   firings    Firing[]
-
-  @@unique([name])
 }
 
 model User {
@@ -87,7 +79,6 @@ model User {
   email         String   @unique
   passwordHash  String
   displayName   String
-  role          UserRole @default(MEMBER)
   studioId      String
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
@@ -96,20 +87,6 @@ model User {
   firingsStarted Firing[] @relation("FiringStartedBy")
   projects      Project[]
   projectSteps  ProjectStep[]
-  sessions      Session[]
-}
-
-model Session {
-  id        String   @id @default(cuid())
-  tokenHash String   @unique
-  userId    String
-  expiresAt DateTime
-  createdAt DateTime @default(now())
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([userId])
-  @@index([expiresAt])
 }
 
 model Kiln {
