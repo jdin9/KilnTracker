@@ -566,14 +566,6 @@ export default function ProjectsPage() {
         </div>
 
         <div className="relative overflow-hidden rounded-2xl border border-purple-100 bg-gradient-to-r from-white via-purple-50 to-indigo-50 p-6 shadow-sm min-h-[360px]">
-          <div className="flex flex-col gap-2">
-            <p className="text-xs font-semibold uppercase tracking-wide text-purple-700">Firing gallery</p>
-            <h2 className="text-2xl font-bold text-gray-900">Recent kiln shots</h2>
-            <p className="text-sm text-gray-700">
-              Browse photos from every project with a Fire activity. Use the arrows to flip through the kiln deck.
-            </p>
-          </div>
-
           <FiringImageCarousel projects={combinedProjects} />
         </div>
 
