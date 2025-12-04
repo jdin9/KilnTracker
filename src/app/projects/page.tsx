@@ -159,17 +159,18 @@ function FiringImageCarousel({ projects }: { projects: StoredProject[] }) {
       <div className="relative mt-2 h-[260px] overflow-hidden rounded-2xl bg-white/60 shadow-inner ring-1 ring-purple-100 md:h-[300px]">
         {firingImages.map((image, index) => {
           const offset = index - activeIndex;
-          if (Math.abs(offset) > 5) return null;
 
+          const leftStackDepth = offset < 0 ? Math.min(Math.abs(offset) - 1, 6) : 0;
           const translateX =
             offset === 0
               ? 0
               : offset > 0
               ? 140 + (offset - 1) * 60
-              : -120 + (offset + 1) * -60;
-          const scale = offset === 0 ? 1 : Math.max(0.7, 1 - Math.abs(offset) * 0.08);
-          const zIndex = Math.max(1, 10 - Math.abs(offset));
-          const opacity = offset === 0 ? 1 : Math.max(0.35, 1 - Math.abs(offset) * 0.15);
+              : -140 - leftStackDepth * 45;
+          const visibleDistance = offset < 0 ? leftStackDepth + 1 : Math.abs(offset);
+          const scale = offset === 0 ? 1 : Math.max(0.7, 1 - visibleDistance * 0.08);
+          const zIndex = Math.max(1, 12 - visibleDistance);
+          const opacity = offset === 0 ? 1 : Math.max(0.35, 1 - visibleDistance * 0.12);
 
           return (
             <div
