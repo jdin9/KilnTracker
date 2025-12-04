@@ -76,7 +76,7 @@ const selectProjectCover = (project: StoredProject): string | null => {
 };
 
 type Filters = {
-  search?: string;
+  maker?: string;
   clayBody?: string;
   selectedGlazes: string[];
   cone?: string;
@@ -127,13 +127,24 @@ export default function ProjectsPage() {
     return [...storedWithCovers, ...mockProjects];
   }, [storedProjects]);
 
+  const makerOptions = useMemo(() => {
+    const makers = new Set<string>();
+    combinedProjects.forEach((project) => {
+      if (project.makerName) {
+        makers.add(project.makerName);
+      }
+    });
+
+    return Array.from(makers).sort((a, b) => a.localeCompare(b));
+  }, [combinedProjects]);
+
   const filteredProjects = useMemo(() => {
     return combinedProjects.filter((project) => {
       const projectSteps = project.steps || [];
       const hasFiring = projectSteps.some((step: any) => step.type === "firing");
-      const matchesSearch = filters.search
-        ? project.title.toLowerCase().includes(filters.search.toLowerCase()) ||
-          (project.makerName || "").toLowerCase().includes(filters.search.toLowerCase())
+
+      const matchesMaker = filters.maker
+        ? (project.makerName || "") === filters.maker
         : true;
 
       const matchesClay = filters.clayBody
@@ -158,7 +169,7 @@ export default function ProjectsPage() {
       })();
 
       return (
-        matchesSearch &&
+        matchesMaker &&
         matchesClay &&
         matchesGlazes &&
         matchesCone &&
@@ -169,7 +180,7 @@ export default function ProjectsPage() {
     combinedProjects,
     filters.clayBody,
     filters.cone,
-    filters.search,
+    filters.maker,
     filters.selectedGlazes,
     filters.showFired,
     filters.showUnfired,
@@ -255,20 +266,28 @@ export default function ProjectsPage() {
           {filtersOpen && (
             <div className="divide-y divide-purple-100 border-t border-purple-100 px-6">
               <div className="py-4">
-                <label className="text-sm font-semibold text-gray-800" htmlFor="search">
-                  Quick search
+                <label className="text-sm font-semibold text-gray-800" htmlFor="maker">
+                  Maker
                 </label>
-                <p className="text-xs text-gray-600">Find by project name or maker.</p>
-                <input
-                  id="search"
-                  type="text"
-                  value={filters.search || ""}
+                <p className="text-xs text-gray-600">Filter by who created the project.</p>
+                <select
+                  id="maker"
+                  value={filters.maker || ""}
                   onChange={(event) =>
-                    setFilters((prev) => ({ ...prev, search: event.target.value }))
+                    setFilters((prev) => ({
+                      ...prev,
+                      maker: event.target.value ? event.target.value : undefined,
+                    }))
                   }
                   className="mt-2 w-full rounded-xl border border-purple-200 bg-white px-3 py-2 text-sm shadow-inner focus:border-purple-400 focus:outline-none"
-                  placeholder="e.g. Carved vase"
-                />
+                >
+                  <option value="">Any maker</option>
+                  {makerOptions.map((maker) => (
+                    <option key={maker} value={maker}>
+                      {maker}
+                    </option>
+                  ))}
+                </select>
               </div>
 
               <div className="py-4">
