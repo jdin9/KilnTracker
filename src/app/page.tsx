@@ -1,9 +1,10 @@
 import Link from "next/link";
 
+import { logoutAction } from "./authActions";
 import { getSessionUser } from "@/server/auth/session";
 
-export default function HomePage() {
-  const sessionUser = getSessionUser();
+export default async function HomePage() {
+  const sessionUser = await getSessionUser();
   const isAdmin = sessionUser?.role === "ADMIN";
 
   return (
@@ -19,21 +20,34 @@ export default function HomePage() {
               Choose where you want to work today.
             </p>
           </div>
-          {isAdmin ? (
-            <Link
-              href="/admin"
-              className="rounded-full border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-800 shadow-sm transition hover:border-purple-200 hover:text-purple-800"
-            >
-              Admin Panel
-            </Link>
-          ) : (
-            <Link
-              href="/login"
-              className="rounded-full border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-800 shadow-sm transition hover:border-purple-200 hover:text-purple-800"
-            >
-              Admin sign in
-            </Link>
-          )}
+          <div className="flex items-center gap-3">
+            {isAdmin ? (
+              <Link
+                href="/admin"
+                className="rounded-full border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-800 shadow-sm transition hover:border-purple-200 hover:text-purple-800"
+              >
+                Admin Panel
+              </Link>
+            ) : (
+              <Link
+                href="/signin"
+                className="rounded-full border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-800 shadow-sm transition hover:border-purple-200 hover:text-purple-800"
+              >
+                Admin sign in
+              </Link>
+            )}
+
+            {sessionUser ? (
+              <form action={logoutAction}>
+                <button
+                  type="submit"
+                  className="rounded-full border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-800 shadow-sm transition hover:border-red-200 hover:text-red-700"
+                >
+                  Sign out
+                </button>
+              </form>
+            ) : null}
+          </div>
         </div>
 
         <div className="mt-12 flex flex-1 items-center">
