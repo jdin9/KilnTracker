@@ -234,6 +234,10 @@ export default function ProjectsPage() {
     () => getActiveStudioColors(initialStudioColors),
     []
   );
+  const inactiveStudioGlazes = useMemo(
+    () => initialStudioColors.filter((color) => color.retired),
+    []
+  );
   const inactiveGlazeNames = useMemo(
     () =>
       new Set(
@@ -285,21 +289,30 @@ export default function ProjectsPage() {
   }, [combinedProjects]);
 
   const glazeFilterOptions = useMemo(() => {
-    const options = [...activeGlazes];
-    const existing = new Set(options.map((glaze) => glaze.name));
+    const activeOptions = [...activeGlazes];
+    const inactiveOptions = [...inactiveStudioGlazes];
+    const existingActive = new Set(activeOptions.map((glaze) => glaze.name));
+    const existingInactive = new Set(inactiveOptions.map((glaze) => glaze.name));
     let dynamicId = 1000;
 
     combinedProjects.forEach((project) => {
       collectProjectGlazes(project).forEach((glaze) => {
-        if (!existing.has(glaze)) {
-          options.push({ id: dynamicId++, name: glaze, brand: "Logged glaze", retired: false });
-          existing.add(glaze);
+        if (existingActive.has(glaze) || existingInactive.has(glaze)) return;
+
+        const isInactive = inactiveGlazeNames.has(glaze);
+        const targetCollection = isInactive ? inactiveOptions : activeOptions;
+        targetCollection.push({ id: dynamicId++, name: glaze, brand: "Logged glaze", retired: isInactive });
+
+        if (isInactive) {
+          existingInactive.add(glaze);
+        } else {
+          existingActive.add(glaze);
         }
       });
     });
 
-    return options;
-  }, [activeGlazes, combinedProjects]);
+    return { active: activeOptions, inactive: inactiveOptions };
+  }, [activeGlazes, combinedProjects, inactiveGlazeNames, inactiveStudioGlazes]);
 
   const filteredProjects = useMemo(() => {
     return combinedProjects.filter((project) => {
@@ -479,27 +492,71 @@ export default function ProjectsPage() {
                 </button>
 
                 {glazeDropdownOpen && (
-                  <div className="mt-3 grid gap-2 md:grid-cols-2">
-                    {glazeFilterOptions.map((color) => (
-                      <label
-                        key={color.id}
-                        className="flex items-start gap-3 rounded-xl border border-purple-100 bg-white px-3 py-3 text-sm text-gray-800 shadow-inner transition hover:border-purple-200"
-                      >
-                        <input
-                          type="checkbox"
-                          checked={filters.selectedGlazes.includes(color.name)}
-                          onChange={() => toggleGlazeSelection(color.name)}
-                          className="mt-1 h-4 w-4 rounded border-purple-300 text-purple-600 focus:ring-purple-500"
-                        />
-                        <div>
-                          <p className="font-semibold">{color.name}</p>
-                          <p className="text-xs text-gray-600">{color.brand}</p>
-                        </div>
-                      </label>
-                    ))}
-                    {glazeFilterOptions.length === 0 && (
-                      <p className="text-sm text-gray-600">No active glazes found.</p>
-                    )}
+                  <div className="mt-3 grid gap-4 md:grid-cols-2">
+                    <div className="space-y-2 rounded-xl border border-purple-100 bg-white p-4 shadow-inner">
+                      <div className="flex items-center justify-between">
+                        <p className="text-sm font-semibold text-gray-800">Active colors</p>
+                        <span className="text-xs text-gray-500">
+                          {glazeFilterOptions.active.length} available
+                        </span>
+                      </div>
+                      <div className="space-y-2">
+                        {glazeFilterOptions.active.map((color) => (
+                          <label
+                            key={`active-${color.id}`}
+                            className="flex items-start gap-3 rounded-lg border border-purple-100 bg-purple-50 px-3 py-2 text-sm text-gray-800 transition hover:border-purple-200"
+                          >
+                            <input
+                              type="checkbox"
+                              checked={filters.selectedGlazes.includes(color.name)}
+                              onChange={() => toggleGlazeSelection(color.name)}
+                              className="mt-1 h-4 w-4 rounded border-purple-300 text-purple-600 focus:ring-purple-500"
+                            />
+                            <div>
+                              <p className="font-semibold">{color.name}</p>
+                              <p className="text-xs text-gray-600">{color.brand}</p>
+                            </div>
+                          </label>
+                        ))}
+                        {glazeFilterOptions.active.length === 0 && (
+                          <p className="text-sm text-gray-600">No active glazes found.</p>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="space-y-2 rounded-xl border border-purple-100 bg-white p-4 shadow-inner">
+                      <div className="flex items-center justify-between">
+                        <p className="text-sm font-semibold text-gray-800">Archived colors</p>
+                        <span className="text-xs text-gray-500">
+                          {glazeFilterOptions.inactive.length} archived
+                        </span>
+                      </div>
+                      <p className="text-xs text-gray-600">
+                        Tap to include projects that used retired glazes.
+                      </p>
+                      <div className="space-y-2">
+                        {glazeFilterOptions.inactive.map((color) => (
+                          <label
+                            key={`inactive-${color.id}`}
+                            className="flex items-start gap-3 rounded-lg border border-purple-100 bg-gray-50 px-3 py-2 text-sm text-gray-800 transition hover:border-purple-200"
+                          >
+                            <input
+                              type="checkbox"
+                              checked={filters.selectedGlazes.includes(color.name)}
+                              onChange={() => toggleGlazeSelection(color.name)}
+                              className="mt-1 h-4 w-4 rounded border-purple-300 text-purple-600 focus:ring-purple-500"
+                            />
+                            <div>
+                              <p className="font-semibold">{color.name}</p>
+                              <p className="text-xs text-gray-600">{color.brand}</p>
+                            </div>
+                          </label>
+                        ))}
+                        {glazeFilterOptions.inactive.length === 0 && (
+                          <p className="text-sm text-gray-600">No archived glazes found.</p>
+                        )}
+                      </div>
+                    </div>
                   </div>
                 )}
               </div>
