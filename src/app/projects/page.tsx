@@ -4,6 +4,7 @@ import React, { useMemo, useState } from "react";
 import Link from "next/link";
 
 import { initialClayBodies } from "@/lib/clayBodies";
+import { coneChart } from "@/lib/coneReference";
 import { formatDate } from "@/lib/dateFormat";
 import { getActiveStudioColors, initialStudioColors } from "@/lib/studioColors";
 import { loadStoredProjects, StoredProject } from "@/lib/projectStorage";
@@ -18,6 +19,16 @@ const mockProjects = [
     createdAt: new Date().toISOString(),
     coverUrl: null,
     glazes: ["Celadon", "Satin White"],
+    steps: [
+      {
+        id: "f1",
+        type: "firing",
+        cone: "6",
+        peakTemp: 2232,
+        firingDate: new Date().toISOString(),
+        photos: [],
+      },
+    ],
   },
   {
     id: "p2",
@@ -27,6 +38,7 @@ const mockProjects = [
     createdAt: new Date().toISOString(),
     coverUrl: null,
     glazes: ["Shino"],
+    steps: [],
   },
   {
     id: "p3",
@@ -36,6 +48,16 @@ const mockProjects = [
     createdAt: new Date().toISOString(),
     coverUrl: null,
     glazes: ["Floating Blue"],
+    steps: [
+      {
+        id: "f2",
+        type: "firing",
+        cone: "10",
+        peakTemp: 2381,
+        firingDate: new Date().toISOString(),
+        photos: [],
+      },
+    ],
   },
 ];
 
@@ -57,10 +79,19 @@ type Filters = {
   search?: string;
   clayBody?: string;
   selectedGlazes: string[];
+  cone?: string;
+  showFired: boolean;
+  showUnfired: boolean;
+};
+
+const defaultFilters: Filters = {
+  selectedGlazes: [],
+  showFired: true,
+  showUnfired: true,
 };
 
 export default function ProjectsPage() {
-  const [filters, setFilters] = useState<Filters>({ selectedGlazes: [] });
+  const [filters, setFilters] = useState<Filters>(defaultFilters);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [glazeDropdownOpen, setGlazeDropdownOpen] = useState(false);
   const [storedProjects, setStoredProjects] = useState<StoredProject[]>([]);
@@ -70,6 +101,7 @@ export default function ProjectsPage() {
     () => getActiveStudioColors(initialStudioColors),
     []
   );
+  const coneOptions = useMemo(() => coneChart, []);
 
   React.useEffect(() => {
     const refreshStoredProjects = () => {
@@ -97,6 +129,8 @@ export default function ProjectsPage() {
 
   const filteredProjects = useMemo(() => {
     return combinedProjects.filter((project) => {
+      const projectSteps = project.steps || [];
+      const hasFiring = projectSteps.some((step: any) => step.type === "firing");
       const matchesSearch = filters.search
         ? project.title.toLowerCase().includes(filters.search.toLowerCase()) ||
           (project.makerName || "").toLowerCase().includes(filters.search.toLowerCase())
@@ -110,9 +144,36 @@ export default function ProjectsPage() {
         ? (project.glazes || []).some((glaze) => filters.selectedGlazes.includes(glaze))
         : true;
 
-      return matchesSearch && matchesClay && matchesGlazes;
+      const matchesCone = filters.cone
+        ? projectSteps.some(
+            (step: any) => step.type === "firing" && step.cone === filters.cone
+          )
+        : true;
+
+      const matchesFiringStatus = (() => {
+        if (filters.showFired && filters.showUnfired) return true;
+        if (filters.showFired) return hasFiring;
+        if (filters.showUnfired) return !hasFiring;
+        return false;
+      })();
+
+      return (
+        matchesSearch &&
+        matchesClay &&
+        matchesGlazes &&
+        matchesCone &&
+        matchesFiringStatus
+      );
     });
-  }, [combinedProjects, filters.clayBody, filters.search, filters.selectedGlazes]);
+  }, [
+    combinedProjects,
+    filters.clayBody,
+    filters.cone,
+    filters.search,
+    filters.selectedGlazes,
+    filters.showFired,
+    filters.showUnfired,
+  ]);
 
   const toggleGlazeSelection = (glazeName: string) => {
     setFilters((prev) => ({
@@ -123,7 +184,24 @@ export default function ProjectsPage() {
     }));
   };
 
-  const clearFilters = () => setFilters({ selectedGlazes: [] });
+  const filtersAppliedCount = useMemo(() => {
+    let count = 0;
+    count += filters.selectedGlazes.length;
+    count += filters.search ? 1 : 0;
+    count += filters.clayBody ? 1 : 0;
+    count += filters.cone ? 1 : 0;
+    count += filters.showFired && filters.showUnfired ? 0 : 1;
+    return count;
+  }, [
+    filters.clayBody,
+    filters.cone,
+    filters.search,
+    filters.selectedGlazes.length,
+    filters.showFired,
+    filters.showUnfired,
+  ]);
+
+  const clearFilters = () => setFilters({ ...defaultFilters });
 
   return (
     <main className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-indigo-50 px-6 py-8">
@@ -166,7 +244,7 @@ export default function ProjectsPage() {
           </div>
           <div className="rounded-2xl bg-purple-600 p-4 text-white shadow-sm ring-1 ring-purple-500/50">
             <p className="text-xs font-semibold uppercase tracking-wide">Filters Applied</p>
-            <p className="mt-2 text-2xl font-bold">{filters.selectedGlazes.length + (filters.search ? 1 : 0) + (filters.clayBody ? 1 : 0)}</p>
+            <p className="mt-2 text-2xl font-bold">{filtersAppliedCount}</p>
             <p className="text-sm text-purple-100">Use the filter dropdown to refine projects.</p>
           </div>
         </section>
@@ -274,6 +352,70 @@ export default function ProjectsPage() {
                     </option>
                   ))}
                 </select>
+              </div>
+
+              <div className="grid gap-4 py-4 md:grid-cols-2 md:items-end">
+                <div>
+                  <label className="text-sm font-semibold text-gray-800" htmlFor="cone">
+                    Firing cone
+                  </label>
+                  <p className="text-xs text-gray-600">Show projects with firings at a specific cone.</p>
+                  <select
+                    id="cone"
+                    value={filters.cone || ""}
+                    onChange={(event) =>
+                      setFilters((prev) => ({
+                        ...prev,
+                        cone: event.target.value ? event.target.value : undefined,
+                      }))
+                    }
+                    className="mt-2 w-full rounded-xl border border-purple-200 bg-white px-3 py-2 text-sm shadow-inner focus:border-purple-400 focus:outline-none"
+                  >
+                    <option value="">Any cone</option>
+                    {coneOptions.map((entry) => (
+                      <option key={entry.cone} value={entry.cone}>
+                        Cone {entry.cone} ({entry.temperatureF}°F)
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="space-y-2 rounded-xl border border-purple-100 bg-white px-4 py-3 shadow-inner">
+                  <p className="text-sm font-semibold text-gray-800">Firing status</p>
+                  <p className="text-xs text-gray-600">
+                    Choose whether to see projects with firing activity logged.
+                  </p>
+                  <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+                    <label className="flex items-center gap-2 text-sm text-gray-800">
+                      <input
+                        type="checkbox"
+                        checked={filters.showFired}
+                        onChange={(event) =>
+                          setFilters((prev) => ({
+                            ...prev,
+                            showFired: event.target.checked,
+                          }))
+                        }
+                        className="h-4 w-4 rounded border-purple-300 text-purple-600 focus:ring-purple-500"
+                      />
+                      <span>Show fired</span>
+                    </label>
+                    <label className="flex items-center gap-2 text-sm text-gray-800">
+                      <input
+                        type="checkbox"
+                        checked={filters.showUnfired}
+                        onChange={(event) =>
+                          setFilters((prev) => ({
+                            ...prev,
+                            showUnfired: event.target.checked,
+                          }))
+                        }
+                        className="h-4 w-4 rounded border-purple-300 text-purple-600 focus:ring-purple-500"
+                      />
+                      <span>Show not fired</span>
+                    </label>
+                  </div>
+                </div>
               </div>
             </div>
           )}
