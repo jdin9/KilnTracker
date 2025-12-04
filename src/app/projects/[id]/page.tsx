@@ -40,6 +40,15 @@ const mockProject = {
   ],
 };
 
+const collectProjectGlazes = (project: StoredProject) => {
+  const glazesFromSteps = (project.steps || [])
+    .filter((step: any) => step.type === "glaze" && step.glazeName)
+    .map((step: any) => step.glazeName as string);
+
+  const combined = [...(project.glazes || []), ...glazesFromSteps].filter(Boolean);
+  return Array.from(new Set(combined));
+};
+
 export default function ProjectDetailPage({ params }: { params: { id: string } }) {
   const [data, setData] = useState<StoredProject | null | "loading">("loading");
   const [activityType, setActivityType] = useState<"glaze" | "fire">("glaze");
@@ -58,7 +67,7 @@ export default function ProjectDetailPage({ params }: { params: { id: string } }
     const storedMatch = storedProjects.find((project) => project.id === params.id);
 
     if (storedMatch) {
-      setData(storedMatch);
+      setData({ ...storedMatch, glazes: collectProjectGlazes(storedMatch) });
       return;
     }
 
@@ -71,6 +80,7 @@ export default function ProjectDetailPage({ params }: { params: { id: string } }
         createdAt: new Date().toISOString(),
         notes: mockProject.notes,
         steps: mockProject.steps,
+        glazes: collectProjectGlazes(mockProject as unknown as StoredProject),
       });
       return;
     }
@@ -121,7 +131,12 @@ export default function ProjectDetailPage({ params }: { params: { id: string } }
 
     setData((prev) => {
       if (!prev || prev === "loading") return prev;
-      const updated = { ...prev, steps: [...prev.steps, newStep] };
+      const updatedSteps = [...prev.steps, newStep];
+      const updated = {
+        ...prev,
+        steps: updatedSteps,
+        glazes: collectProjectGlazes({ ...prev, steps: updatedSteps }),
+      };
       if (params.id !== mockProject.id) {
         saveStoredProject(updated);
       }
@@ -177,6 +192,14 @@ export default function ProjectDetailPage({ params }: { params: { id: string } }
               <span className="rounded-full bg-indigo-100 px-3 py-1 text-xs font-semibold text-indigo-800">
                 Maker: {data.makerName || "Unassigned"}
               </span>
+              {collectProjectGlazes(data).map((glaze) => (
+                <span
+                  key={glaze}
+                  className="rounded-full bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-800"
+                >
+                  {glaze}
+                </span>
+              ))}
               {data.notes && (
                 <span className="rounded-full bg-gray-100 px-3 py-1 text-xs font-semibold text-gray-700">Notes added</span>
               )}
