@@ -256,14 +256,6 @@ export default function ProjectDetailPage({ params }: { params: { id: string } }
                           <p className="text-xs font-semibold text-purple-800">Coats</p>
                           <p className="font-medium">{step.numCoats}</p>
                         </div>
-                        <div className="rounded-xl bg-purple-50 px-3 py-2">
-                          <p className="text-xs font-semibold text-purple-800">Application</p>
-                          <p className="font-medium capitalize">{step.applicationMethod || "Not specified"}</p>
-                        </div>
-                        <div className="rounded-xl bg-purple-50 px-3 py-2">
-                          <p className="text-xs font-semibold text-purple-800">Pattern</p>
-                          <p className="font-medium">{step.patternDescription || "Not specified"}</p>
-                        </div>
                         {step.notes && (
                           <div className="md:col-span-2 rounded-xl bg-gray-50 px-3 py-2">
                             <p className="text-xs font-semibold text-gray-700">Notes</p>
