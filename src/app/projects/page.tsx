@@ -26,18 +26,7 @@ const mockProjects = [
         cone: "6",
         peakTemp: 2232,
         firingDate: new Date().toISOString(),
-        photos: [
-          {
-            id: "fp1",
-            name: "Kiln at peak heat",
-            url: "https://images.unsplash.com/photo-1470909752005-0ac27f5a9d6d?auto=format&fit=crop&w=1200&q=80",
-          },
-          {
-            id: "fp2",
-            name: "Fresh unload",
-            url: "https://images.unsplash.com/photo-1504595403659-9088ce801e29?auto=format&fit=crop&w=1200&q=80",
-          },
-        ],
+        photos: [],
       },
     ],
   },
@@ -229,33 +218,6 @@ export default function ProjectsPage() {
     filters.showUnfired,
   ]);
 
-  const fireGalleryItems = useMemo(() => {
-    const galleryEntries = filteredProjects.flatMap((project) => {
-      const steps = project.steps || [];
-
-      return steps
-        .filter((step: any) => step.type === "firing")
-        .flatMap((step: any) => {
-          const stepPhotos = step.photos || [];
-          return stepPhotos.map((photo: any, index: number) => ({
-            id: `${project.id}-${step.id}-${photo.id || index}`,
-            photo,
-            projectTitle: project.title || "Untitled",
-            projectId: project.id,
-            firingDate: step.firingDate,
-            cone: step.cone,
-            clayBody: project.clayBody,
-            glazes: collectProjectGlazes(project),
-          }));
-        });
-    });
-
-    return galleryEntries.sort(
-      (a, b) =>
-        new Date(b.firingDate || 0).getTime() - new Date(a.firingDate || 0).getTime()
-    );
-  }, [filteredProjects]);
-
   const toggleGlazeSelection = (glazeName: string) => {
     setFilters((prev) => ({
       ...prev,
@@ -294,77 +256,6 @@ export default function ProjectsPage() {
             + New Project
           </Link>
         </div>
-
-        <section className="space-y-4 rounded-2xl border border-purple-100 bg-white/90 p-6 shadow-sm">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-wide text-purple-700">Firing gallery</p>
-              <h2 className="text-xl font-bold text-gray-900">Recent firing photos</h2>
-              <p className="text-sm text-gray-600">
-                Only firing activity photos from projects that match the current filters.
-              </p>
-            </div>
-            <span className="rounded-full bg-purple-50 px-3 py-1 text-xs font-semibold text-purple-800">
-              {fireGalleryItems.length} photo{fireGalleryItems.length === 1 ? "" : "s"}
-            </span>
-          </div>
-
-          {fireGalleryItems.length > 0 ? (
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {fireGalleryItems.map((entry) => (
-                <Link
-                  key={entry.id}
-                  href={`/projects/${entry.projectId}`}
-                  className="group overflow-hidden rounded-2xl border border-purple-100 bg-gradient-to-br from-white via-white to-purple-50 shadow-sm transition hover:-translate-y-1 hover:border-purple-200 hover:shadow-md"
-                >
-                  <div className="relative h-44 overflow-hidden">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={entry.photo.url}
-                      alt={entry.photo.name || `${entry.projectTitle} firing photo`}
-                      className="h-full w-full object-cover transition duration-300 group-hover:scale-105"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-black/10 to-transparent" />
-                    <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between text-xs font-semibold text-white drop-shadow">
-                      <span>
-                        {entry.firingDate ? formatDate(entry.firingDate) : "Firing date not set"}
-                      </span>
-                      {entry.cone ? <span className="rounded-full bg-white/20 px-2 py-1">Cone {entry.cone}</span> : null}
-                    </div>
-                  </div>
-
-                  <div className="space-y-2 px-4 py-3">
-                    <div className="flex items-center justify-between gap-2">
-                      <p className="text-sm font-semibold text-gray-900">{entry.projectTitle}</p>
-                      <span className="rounded-full bg-purple-100 px-2 py-1 text-[11px] font-semibold text-purple-800">
-                        {entry.clayBody}
-                      </span>
-                    </div>
-
-                    <div className="flex flex-wrap gap-2">
-                      {entry.glazes.length > 0 ? (
-                        entry.glazes.map((glaze) => (
-                          <span
-                            key={glaze}
-                            className="rounded-full bg-indigo-50 px-2 py-1 text-[11px] font-semibold text-indigo-800"
-                          >
-                            {glaze}
-                          </span>
-                        ))
-                      ) : (
-                        <span className="text-xs text-gray-600">No glaze logged</span>
-                      )}
-                    </div>
-                  </div>
-                </Link>
-              ))}
-            </div>
-          ) : (
-            <div className="rounded-2xl border border-dashed border-purple-200 bg-white/70 px-6 py-10 text-center text-gray-600">
-              No firing photos match the current filters yet. Try adjusting them or log a firing photo.
-            </div>
-          )}
-        </section>
 
         <section className="grid gap-4 md:grid-cols-2">
           <div className="rounded-2xl bg-white/80 p-4 shadow-sm ring-1 ring-purple-100">
