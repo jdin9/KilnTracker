@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 
 import { initialClayBodies } from "@/lib/clayBodies";
@@ -91,13 +91,130 @@ type Filters = {
   cone?: string;
   showFired: boolean;
   showUnfired: boolean;
+  showInactiveGlazes: boolean;
+};
+
+type FiringImage = {
+  id: string;
+  url: string;
+  projectId: string;
+  projectTitle: string;
 };
 
 const defaultFilters: Filters = {
   selectedGlazes: [],
   showFired: true,
   showUnfired: true,
+  showInactiveGlazes: true,
 };
+
+function FiringImageCarousel({ projects }: { projects: StoredProject[] }) {
+  const firingImages = useMemo(() => {
+    const collected: FiringImage[] = [];
+
+    projects.forEach((project) => {
+      (project.steps || []).forEach((step: any, stepIndex: number) => {
+        const stepType = (step?.type || step?.activity || "").toString().toLowerCase();
+
+        if (stepType !== "firing" && stepType !== "fire") return;
+
+        (step.photos || []).forEach((photo: any, photoIndex: number) => {
+          if (!photo?.url) return;
+
+          collected.push({
+            id: `${project.id}-fire-${step.id ?? stepIndex}-${photo.id ?? photoIndex}`,
+            url: photo.url,
+            projectId: project.id,
+            projectTitle: project.title,
+          });
+        });
+      });
+    });
+
+    return collected;
+  }, [projects]);
+
+  const [activeIndex, setActiveIndex] = useState(0);
+
+  useEffect(() => {
+    setActiveIndex((prev) => {
+      if (firingImages.length === 0) return 0;
+      return Math.min(prev, firingImages.length - 1);
+    });
+  }, [firingImages.length]);
+
+  if (!firingImages.length) {
+    return (
+      <div className="mt-4 flex min-h-[220px] items-center justify-center rounded-xl border border-dashed border-purple-200 bg-white/60 px-4 text-center shadow-inner">
+        <div className="space-y-2">
+          <p className="text-sm font-semibold text-gray-800">No firing photos yet</p>
+          <p className="text-xs text-gray-600">
+            Add a Fire activity with photos on any project to start building the kiln gallery.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="mt-6">
+      <div className="relative mt-2 h-[260px] overflow-hidden rounded-2xl bg-white/60 shadow-inner ring-1 ring-purple-100 md:h-[300px]">
+        {firingImages.map((image, index) => {
+          const offset = index - activeIndex;
+
+          const leftStackDepth = offset < 0 ? Math.min(Math.abs(offset) - 1, 6) : 0;
+          const translateX =
+            offset === 0
+              ? 0
+              : offset > 0
+              ? 140 + (offset - 1) * 60
+              : -140 - leftStackDepth * 45;
+          const visibleDistance = offset < 0 ? leftStackDepth + 1 : Math.abs(offset);
+          const scale = offset === 0 ? 1 : Math.max(0.7, 1 - visibleDistance * 0.08);
+          const zIndex = Math.max(1, 12 - visibleDistance);
+          const opacity = offset === 0 ? 1 : Math.max(0.35, 1 - visibleDistance * 0.12);
+
+          return (
+            <div
+              key={image.id}
+              className="absolute left-1/2 top-1/2 block h-48 w-64 -translate-x-1/2 -translate-y-1/2 overflow-hidden rounded-xl border border-purple-100 bg-white shadow-lg transition-all duration-500 ease-out md:h-56 md:w-80"
+              style={{
+                transform: `translate(-50%, -50%) translateX(${translateX}px) scale(${scale})`,
+                zIndex,
+                opacity,
+              }}
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={image.url} alt={`${image.projectTitle} firing photo`} className="h-full w-full object-cover" />
+            </div>
+          );
+        })}
+      </div>
+
+      <div className="mt-6 flex items-center justify-center gap-3">
+        <button
+          type="button"
+          onClick={() => setActiveIndex((prev) => Math.max(0, prev - 1))}
+          disabled={activeIndex === 0}
+          className="inline-flex items-center gap-2 rounded-full border border-purple-200 px-4 py-2 text-sm font-semibold text-purple-800 transition disabled:cursor-not-allowed disabled:border-purple-100 disabled:text-purple-300 hover:border-purple-300 hover:bg-purple-50 disabled:hover:bg-transparent"
+        >
+          ← Left
+        </button>
+        <span className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+          {activeIndex + 1} / {firingImages.length}
+        </span>
+        <button
+          type="button"
+          onClick={() => setActiveIndex((prev) => Math.min(firingImages.length - 1, prev + 1))}
+          disabled={activeIndex === firingImages.length - 1}
+          className="inline-flex items-center gap-2 rounded-full border border-purple-200 px-4 py-2 text-sm font-semibold text-purple-800 transition disabled:cursor-not-allowed disabled:border-purple-100 disabled:text-purple-300 hover:border-purple-300 hover:bg-purple-50 disabled:hover:bg-transparent"
+        >
+          Right →
+        </button>
+      </div>
+    </div>
+  );
+}
 
 export default function ProjectsPage() {
   const [filters, setFilters] = useState<Filters>(defaultFilters);
@@ -108,6 +225,13 @@ export default function ProjectsPage() {
   const clayBodyOptions = useMemo(() => initialClayBodies, []);
   const activeGlazes = useMemo(
     () => getActiveStudioColors(initialStudioColors),
+    []
+  );
+  const inactiveGlazeNames = useMemo(
+    () =>
+      new Set(
+        initialStudioColors.filter((color) => color.retired).map((color) => color.name)
+      ),
     []
   );
   const coneOptions = useMemo(() => coneChart, []);
@@ -173,7 +297,14 @@ export default function ProjectsPage() {
   const filteredProjects = useMemo(() => {
     return combinedProjects.filter((project) => {
       const projectSteps = project.steps || [];
-      const hasFiring = projectSteps.some((step: any) => step.type === "firing");
+      const projectGlazes = collectProjectGlazes(project);
+      const hasInactiveGlaze = projectGlazes.some((glaze) =>
+        inactiveGlazeNames.has(glaze)
+      );
+      const hasFiring = projectSteps.some((step: any) => {
+        const stepType = (step?.type || step?.activity || "").toString().toLowerCase();
+        return stepType === "firing" || stepType === "fire";
+      });
 
       const matchesMaker = filters.maker
         ? (project.makerName || "") === filters.maker
@@ -184,13 +315,18 @@ export default function ProjectsPage() {
         : true;
 
       const matchesGlazes = filters.selectedGlazes.length
-        ? collectProjectGlazes(project).some((glaze) => filters.selectedGlazes.includes(glaze))
+        ? projectGlazes.some((glaze) => filters.selectedGlazes.includes(glaze))
         : true;
 
+      const matchesInactiveGlazePreference = filters.showInactiveGlazes
+        ? true
+        : !hasInactiveGlaze;
+
       const matchesCone = filters.cone
-        ? projectSteps.some(
-            (step: any) => step.type === "firing" && step.cone === filters.cone
-          )
+        ? projectSteps.some((step: any) => {
+            const stepType = (step?.type || step?.activity || "").toString().toLowerCase();
+            return (stepType === "firing" || stepType === "fire") && step.cone === filters.cone;
+          })
         : true;
 
       const matchesFiringStatus = (() => {
@@ -205,7 +341,8 @@ export default function ProjectsPage() {
         matchesClay &&
         matchesGlazes &&
         matchesCone &&
-        matchesFiringStatus
+        matchesFiringStatus &&
+        matchesInactiveGlazePreference
       );
     });
   }, [
@@ -213,9 +350,11 @@ export default function ProjectsPage() {
     filters.clayBody,
     filters.cone,
     filters.maker,
+    filters.showInactiveGlazes,
     filters.selectedGlazes,
     filters.showFired,
     filters.showUnfired,
+    inactiveGlazeNames,
   ]);
 
   const toggleGlazeSelection = (glazeName: string) => {
@@ -359,6 +498,31 @@ export default function ProjectsPage() {
               </div>
 
               <div className="py-4">
+                <div className="flex items-start gap-3 rounded-xl border border-purple-100 bg-white px-4 py-3 shadow-inner">
+                  <input
+                    id="inactive-glazes"
+                    type="checkbox"
+                    checked={filters.showInactiveGlazes}
+                    onChange={(event) =>
+                      setFilters((prev) => ({
+                        ...prev,
+                        showInactiveGlazes: event.target.checked,
+                      }))
+                    }
+                    className="mt-1 h-4 w-4 rounded border-purple-300 text-purple-600 focus:ring-purple-500"
+                  />
+                  <div>
+                    <label className="text-sm font-semibold text-gray-800" htmlFor="inactive-glazes">
+                      Show projects with inactive glazes
+                    </label>
+                    <p className="text-xs text-gray-600">
+                      Uncheck to hide any projects and gallery images that use retired glazes.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="py-4">
                 <label className="text-sm font-semibold text-gray-800" htmlFor="clay-body">
                   Clay body
                 </label>
@@ -448,6 +612,10 @@ export default function ProjectsPage() {
               </div>
             </div>
           )}
+        </div>
+
+        <div className="relative overflow-hidden rounded-2xl border border-purple-100 bg-gradient-to-r from-white via-purple-50 to-indigo-50 p-6 shadow-sm min-h-[360px]">
+          <FiringImageCarousel projects={filteredProjects} />
         </div>
 
         <section className="grid gap-4 md:grid-cols-2">
