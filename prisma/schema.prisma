@@ -77,7 +77,6 @@ model Studio {
   glazes     Glaze[]
   clayBodies ClayBody[]
   projects   Project[]
-  firings    Firing[]
 
   @@unique([name])
 }
