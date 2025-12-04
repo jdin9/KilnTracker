@@ -3,10 +3,14 @@ import { redirect } from "next/navigation";
 import { getSessionUser } from "@/server/auth/session";
 import KilnSettingsClient from "./KilnSettingsClient";
 
-export default function KilnSettingsPage() {
-  const user = getSessionUser();
+export default async function KilnSettingsPage() {
+  const user = await getSessionUser();
 
-  if (!user || user.role !== "ADMIN") {
+  if (!user) {
+    redirect("/signin");
+  }
+
+  if (user.role !== "ADMIN") {
     redirect("/unauthorized");
   }
 
