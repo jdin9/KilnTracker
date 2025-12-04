@@ -1,15 +1,22 @@
-import type { User } from '@prisma/client';
+import { cookies } from 'next/headers';
+
 import { prisma } from '../../db/client';
+import { getSessionUser } from '../auth/session';
+import type { SessionUser } from '../auth/types';
 
 export interface Context {
   prisma: typeof prisma;
-  currentUser: User | null;
+  currentUser: SessionUser | null;
+  sessionToken: string | null;
 }
 
-// Placeholder creator; integrate with your auth/session layer in Next.js.
 export async function createContext(): Promise<Context> {
+  const sessionToken = cookies().get('kiln.session-token')?.value ?? null;
+  const currentUser = getSessionUser();
+
   return {
     prisma,
-    currentUser: null,
+    currentUser,
+    sessionToken,
   };
 }

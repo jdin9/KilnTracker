@@ -1,4 +1,4 @@
-import { router, publicProcedure } from '../trpc';
+import { adminProcedure, protectedProcedure, router } from '../trpc';
 import { getCurrentUser } from '../../auth/getCurrentUser';
 import {
   completeFiringInputSchema,
@@ -16,27 +16,27 @@ import {
 } from '../../services/firingService';
 
 export const firingRouter = router({
-  create: publicProcedure.input(createFiringInputSchema).mutation(async ({ ctx, input }) => {
+  create: protectedProcedure.input(createFiringInputSchema).mutation(async ({ ctx, input }) => {
     const user = getCurrentUser(ctx);
     return createFiring(ctx, user, input);
   }),
 
-  addEvent: publicProcedure.input(firingEventInputSchema).mutation(async ({ ctx, input }) => {
+  addEvent: protectedProcedure.input(firingEventInputSchema).mutation(async ({ ctx, input }) => {
     const user = getCurrentUser(ctx);
     return appendFiringEvent(ctx, user, input);
   }),
 
-  complete: publicProcedure.input(completeFiringInputSchema).mutation(async ({ ctx, input }) => {
+  complete: protectedProcedure.input(completeFiringInputSchema).mutation(async ({ ctx, input }) => {
     const user = getCurrentUser(ctx);
     return completeFiring(ctx, user, input);
   }),
 
-  delete: publicProcedure.input(deleteFiringInputSchema).mutation(async ({ ctx, input }) => {
+  delete: adminProcedure.input(deleteFiringInputSchema).mutation(async ({ ctx, input }) => {
     const user = getCurrentUser(ctx);
     return deleteFiring(ctx, user, input.firingId);
   }),
 
-  list: publicProcedure
+  list: protectedProcedure
     .input(listFiringFiltersSchema.optional())
     .query(async ({ ctx, input = {} }) => {
       const user = getCurrentUser(ctx);
