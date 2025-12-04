@@ -91,6 +91,14 @@ type Filters = {
   cone?: string;
   showFired: boolean;
   showUnfired: boolean;
+  showInactiveGlazes: boolean;
+};
+
+type FiringImage = {
+  id: string;
+  url: string;
+  projectId: string;
+  projectTitle: string;
 };
 
 type FiringImage = {
@@ -104,6 +112,7 @@ const defaultFilters: Filters = {
   selectedGlazes: [],
   showFired: true,
   showUnfired: true,
+  showInactiveGlazes: true,
 };
 
 function FiringImageCarousel({ projects }: { projects: StoredProject[] }) {
@@ -225,6 +234,13 @@ export default function ProjectsPage() {
     () => getActiveStudioColors(initialStudioColors),
     []
   );
+  const inactiveGlazeNames = useMemo(
+    () =>
+      new Set(
+        initialStudioColors.filter((color) => color.retired).map((color) => color.name)
+      ),
+    []
+  );
   const coneOptions = useMemo(() => coneChart, []);
 
   React.useEffect(() => {
@@ -288,6 +304,10 @@ export default function ProjectsPage() {
   const filteredProjects = useMemo(() => {
     return combinedProjects.filter((project) => {
       const projectSteps = project.steps || [];
+      const projectGlazes = collectProjectGlazes(project);
+      const hasInactiveGlaze = projectGlazes.some((glaze) =>
+        inactiveGlazeNames.has(glaze)
+      );
       const hasFiring = projectSteps.some((step: any) => {
         const stepType = (step?.type || step?.activity || "").toString().toLowerCase();
         return stepType === "firing" || stepType === "fire";
@@ -302,8 +322,12 @@ export default function ProjectsPage() {
         : true;
 
       const matchesGlazes = filters.selectedGlazes.length
-        ? collectProjectGlazes(project).some((glaze) => filters.selectedGlazes.includes(glaze))
+        ? projectGlazes.some((glaze) => filters.selectedGlazes.includes(glaze))
         : true;
+
+      const matchesInactiveGlazePreference = filters.showInactiveGlazes
+        ? true
+        : !hasInactiveGlaze;
 
       const matchesCone = filters.cone
         ? projectSteps.some((step: any) => {
@@ -324,7 +348,8 @@ export default function ProjectsPage() {
         matchesClay &&
         matchesGlazes &&
         matchesCone &&
-        matchesFiringStatus
+        matchesFiringStatus &&
+        matchesInactiveGlazePreference
       );
     });
   }, [
@@ -332,9 +357,11 @@ export default function ProjectsPage() {
     filters.clayBody,
     filters.cone,
     filters.maker,
+    filters.showInactiveGlazes,
     filters.selectedGlazes,
     filters.showFired,
     filters.showUnfired,
+    inactiveGlazeNames,
   ]);
 
   const toggleGlazeSelection = (glazeName: string) => {
@@ -475,6 +502,31 @@ export default function ProjectsPage() {
                     )}
                   </div>
                 )}
+              </div>
+
+              <div className="py-4">
+                <div className="flex items-start gap-3 rounded-xl border border-purple-100 bg-white px-4 py-3 shadow-inner">
+                  <input
+                    id="inactive-glazes"
+                    type="checkbox"
+                    checked={filters.showInactiveGlazes}
+                    onChange={(event) =>
+                      setFilters((prev) => ({
+                        ...prev,
+                        showInactiveGlazes: event.target.checked,
+                      }))
+                    }
+                    className="mt-1 h-4 w-4 rounded border-purple-300 text-purple-600 focus:ring-purple-500"
+                  />
+                  <div>
+                    <label className="text-sm font-semibold text-gray-800" htmlFor="inactive-glazes">
+                      Show projects with inactive glazes
+                    </label>
+                    <p className="text-xs text-gray-600">
+                      Uncheck to hide any projects and gallery images that use retired glazes.
+                    </p>
+                  </div>
+                </div>
               </div>
 
               <div className="py-4">
