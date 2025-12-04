@@ -61,6 +61,15 @@ const mockProjects = [
   },
 ];
 
+const collectProjectGlazes = (project: StoredProject) => {
+  const glazesFromSteps = (project.steps || [])
+    .filter((step: any) => step.type === "glaze" && step.glazeName)
+    .map((step: any) => step.glazeName as string);
+
+  const combined = [...(project.glazes || []), ...glazesFromSteps].filter(Boolean);
+  return Array.from(new Set(combined));
+};
+
 const selectProjectCover = (project: StoredProject): string | null => {
   const firingWithPhotos =
     project.steps
@@ -121,10 +130,16 @@ export default function ProjectsPage() {
 
     const storedWithCovers = sortedStored.map((project) => ({
       ...project,
+      glazes: collectProjectGlazes(project),
       coverUrl: selectProjectCover(project),
     }));
 
-    return [...storedWithCovers, ...mockProjects];
+    const normalizedMocks = mockProjects.map((project) => ({
+      ...project,
+      glazes: collectProjectGlazes(project as StoredProject),
+    }));
+
+    return [...storedWithCovers, ...normalizedMocks];
   }, [storedProjects]);
 
   const makerOptions = useMemo(() => {
@@ -137,6 +152,23 @@ export default function ProjectsPage() {
 
     return Array.from(makers).sort((a, b) => a.localeCompare(b));
   }, [combinedProjects]);
+
+  const glazeFilterOptions = useMemo(() => {
+    const options = [...activeGlazes];
+    const existing = new Set(options.map((glaze) => glaze.name));
+    let dynamicId = 1000;
+
+    combinedProjects.forEach((project) => {
+      collectProjectGlazes(project).forEach((glaze) => {
+        if (!existing.has(glaze)) {
+          options.push({ id: dynamicId++, name: glaze, brand: "Logged glaze", retired: false });
+          existing.add(glaze);
+        }
+      });
+    });
+
+    return options;
+  }, [activeGlazes, combinedProjects]);
 
   const filteredProjects = useMemo(() => {
     return combinedProjects.filter((project) => {
@@ -152,7 +184,7 @@ export default function ProjectsPage() {
         : true;
 
       const matchesGlazes = filters.selectedGlazes.length
-        ? (project.glazes || []).some((glaze) => filters.selectedGlazes.includes(glaze))
+        ? collectProjectGlazes(project).some((glaze) => filters.selectedGlazes.includes(glaze))
         : true;
 
       const matchesCone = filters.cone
@@ -302,7 +334,7 @@ export default function ProjectsPage() {
 
                 {glazeDropdownOpen && (
                   <div className="mt-3 grid gap-2 md:grid-cols-2">
-                    {activeGlazes.map((color) => (
+                    {glazeFilterOptions.map((color) => (
                       <label
                         key={color.id}
                         className="flex items-start gap-3 rounded-xl border border-purple-100 bg-white px-3 py-3 text-sm text-gray-800 shadow-inner transition hover:border-purple-200"
@@ -319,7 +351,7 @@ export default function ProjectsPage() {
                         </div>
                       </label>
                     ))}
-                    {activeGlazes.length === 0 && (
+                    {glazeFilterOptions.length === 0 && (
                       <p className="text-sm text-gray-600">No active glazes found.</p>
                     )}
                   </div>
