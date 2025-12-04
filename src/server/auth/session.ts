@@ -72,10 +72,12 @@ export async function getSession() {
 
   const tokenHash = hashToken(rawToken);
 
-  const session = await prisma.session.findUnique({
-    where: { tokenHash },
-    include: { user: true },
-  });
+  const session = await prisma.session
+    .findUnique({
+      where: { tokenHash },
+      include: { user: true },
+    })
+    .catch(() => null);
 
   if (!session) {
     cookies().delete(SESSION_COOKIE);
