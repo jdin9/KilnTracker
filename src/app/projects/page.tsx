@@ -288,7 +288,10 @@ export default function ProjectsPage() {
   const filteredProjects = useMemo(() => {
     return combinedProjects.filter((project) => {
       const projectSteps = project.steps || [];
-      const hasFiring = projectSteps.some((step: any) => step.type === "firing");
+      const hasFiring = projectSteps.some((step: any) => {
+        const stepType = (step?.type || step?.activity || "").toString().toLowerCase();
+        return stepType === "firing" || stepType === "fire";
+      });
 
       const matchesMaker = filters.maker
         ? (project.makerName || "") === filters.maker
@@ -303,9 +306,10 @@ export default function ProjectsPage() {
         : true;
 
       const matchesCone = filters.cone
-        ? projectSteps.some(
-            (step: any) => step.type === "firing" && step.cone === filters.cone
-          )
+        ? projectSteps.some((step: any) => {
+            const stepType = (step?.type || step?.activity || "").toString().toLowerCase();
+            return (stepType === "firing" || stepType === "fire") && step.cone === filters.cone;
+          })
         : true;
 
       const matchesFiringStatus = (() => {
@@ -566,7 +570,7 @@ export default function ProjectsPage() {
         </div>
 
         <div className="relative overflow-hidden rounded-2xl border border-purple-100 bg-gradient-to-r from-white via-purple-50 to-indigo-50 p-6 shadow-sm min-h-[360px]">
-          <FiringImageCarousel projects={combinedProjects} />
+          <FiringImageCarousel projects={filteredProjects} />
         </div>
 
         <section className="grid gap-4 md:grid-cols-2">
