@@ -450,6 +450,41 @@ export default function ProjectsPage() {
           )}
         </div>
 
+        <div className="rounded-2xl border border-purple-100 bg-gradient-to-r from-white via-purple-50 to-indigo-50 p-6 shadow-sm min-h-[320px]">
+          <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
+            <div className="space-y-2">
+              <p className="text-xs font-semibold uppercase tracking-wide text-purple-700">Studio snapshot</p>
+              <h2 className="text-2xl font-bold text-gray-900">Highlights for this firing cycle</h2>
+              <p className="text-sm text-gray-700">
+                Keep momentum between organizing filters and browsing the full project gallery with a quick studio summary.
+              </p>
+            </div>
+
+            <div className="grid gap-3 md:grid-cols-2">
+              <div className="rounded-xl bg-white/80 p-4 shadow-inner ring-1 ring-purple-100">
+                <p className="text-sm font-semibold text-gray-800">Recently added</p>
+                <p className="text-3xl font-bold text-purple-800">{combinedProjects.slice(0, 3).length}</p>
+                <p className="text-xs text-gray-600">Projects logged this week</p>
+              </div>
+              <div className="rounded-xl bg-white/80 p-4 shadow-inner ring-1 ring-purple-100">
+                <p className="text-sm font-semibold text-gray-800">Glazes in use</p>
+                <p className="text-3xl font-bold text-purple-800">{glazeFilterOptions.length}</p>
+                <p className="text-xs text-gray-600">Available across the studio</p>
+              </div>
+              <div className="rounded-xl bg-white/80 p-4 shadow-inner ring-1 ring-purple-100">
+                <p className="text-sm font-semibold text-gray-800">Firing ready</p>
+                <p className="text-3xl font-bold text-purple-800">{filteredProjects.filter((project) => !(project.steps || []).some((step: any) => step.type === "firing")).length}</p>
+                <p className="text-xs text-gray-600">Pieces waiting on first firing</p>
+              </div>
+              <div className="rounded-xl bg-white/80 p-4 shadow-inner ring-1 ring-purple-100">
+                <p className="text-sm font-semibold text-gray-800">Firing complete</p>
+                <p className="text-3xl font-bold text-purple-800">{filteredProjects.filter((project) => (project.steps || []).some((step: any) => step.type === "firing")).length}</p>
+                <p className="text-xs text-gray-600">Projects with firing activity</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <section className="grid gap-4 md:grid-cols-2">
           {filteredProjects.map((project) => (
             <Link
