@@ -199,7 +199,7 @@ export default function NewProjectPage() {
                 htmlFor="firing-photos"
                 className="inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-white px-4 py-2 text-sm font-semibold text-purple-700 shadow hover:bg-purple-50"
               >
-                Upload firing photos
+                Upload project photos
               </label>
               <input
                 id="firing-photos"
