@@ -3,11 +3,11 @@ import { redirect } from "next/navigation";
 import { getSessionUser } from "@/server/auth/session";
 import AdminDashboard from "./AdminDashboard";
 
-export default async function AdminPage() {
-  const currentUser = await getSessionUser();
+export default function AdminPage() {
+  const currentUser = getSessionUser();
 
   if (!currentUser) {
-    redirect("/signin");
+    redirect("/login");
   }
 
   if (currentUser.role !== "ADMIN") {

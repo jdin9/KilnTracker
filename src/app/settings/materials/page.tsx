@@ -3,14 +3,10 @@ import { redirect } from "next/navigation";
 import { getSessionUser } from "@/server/auth/session";
 import MaterialsSettingsClient from "./MaterialsSettingsClient";
 
-export default async function MaterialsSettingsPage() {
-  const user = await getSessionUser();
+export default function MaterialsSettingsPage() {
+  const user = getSessionUser();
 
-  if (!user) {
-    redirect("/signin");
-  }
-
-  if (user.role !== "ADMIN") {
+  if (!user || user.role !== "ADMIN") {
     redirect("/unauthorized");
   }
 
