@@ -55,6 +55,11 @@ const initialKilns: Kiln[] = [
 
 export default function AdminDashboard({ currentUser }: { currentUser: SessionUser }) {
   const [activeTab, setActiveTab] = useState<string>("users");
+  const [studioDetails, setStudioDetails] = useState({
+    name: "Kiln Collective Studio",
+    password: "clayworks123",
+  });
+  const [studioForm, setStudioForm] = useState(studioDetails);
   const [users, setUsers] = useState<User[]>(initialUsers);
   const [form, setForm] = useState<Omit<User, "id">>({
     firstName: "",
@@ -326,9 +331,111 @@ export default function AdminDashboard({ currentUser }: { currentUser: SessionUs
             </div>
           </form>
         </div>
-      </div>
+        </div>
     ),
     [users, form, editingId, handleSubmit, startEdit, resetForm]
+  );
+
+  const studioContent = useMemo(
+    () => (
+      <div className="grid gap-8 lg:grid-cols-3">
+        <div className="lg:col-span-2 space-y-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-semibold uppercase tracking-wide text-purple-700">Studio</p>
+              <h2 className="text-2xl font-bold text-gray-900">Studio identity</h2>
+              <p className="text-sm text-gray-600">
+                Update the studio name and shared access password used across the team.
+              </p>
+            </div>
+          </div>
+
+          <div className="rounded-2xl border border-purple-100 bg-white shadow-sm">
+            <div className="flex items-center justify-between border-b border-purple-100 px-4 py-3">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wide text-purple-700">Current studio</p>
+                <h3 className="text-lg font-bold text-gray-900">{studioDetails.name}</h3>
+                <p className="text-sm text-gray-600">Password is kept private but can be updated below.</p>
+              </div>
+              <div className="rounded-full bg-purple-50 px-3 py-1 text-xs font-semibold text-purple-800 ring-1 ring-purple-100">
+                Managed by admin
+              </div>
+            </div>
+            <dl className="grid grid-cols-2 gap-4 px-4 py-4 text-sm text-gray-700">
+              <div className="space-y-1">
+                <dt className="text-xs font-semibold uppercase tracking-wide text-purple-700">Studio name</dt>
+                <dd className="font-semibold text-gray-900">{studioDetails.name}</dd>
+              </div>
+              <div className="space-y-1">
+                <dt className="text-xs font-semibold uppercase tracking-wide text-purple-700">Password</dt>
+                <dd className="font-mono text-xs text-gray-600">••••••••••</dd>
+              </div>
+            </dl>
+          </div>
+        </div>
+
+        <div className="rounded-3xl border border-purple-100 bg-purple-50 p-6 shadow-inner">
+          <h3 className="text-lg font-semibold text-gray-900">Edit studio details</h3>
+          <p className="mt-1 text-sm text-gray-600">
+            Change the displayed studio name or rotate the shared password.
+          </p>
+          <form
+            className="mt-4 space-y-3"
+            onSubmit={(event: FormEvent<HTMLFormElement>) => {
+              event.preventDefault();
+              if (!studioForm.name.trim() || !studioForm.password.trim()) return;
+              setStudioDetails(studioForm);
+            }}
+          >
+            <div className="space-y-1">
+              <label className="text-sm font-semibold text-gray-800" htmlFor="studio-name">
+                Studio name
+              </label>
+              <input
+                id="studio-name"
+                name="studio-name"
+                value={studioForm.name}
+                onChange={(event) => setStudioForm((prev) => ({ ...prev, name: event.target.value }))}
+                className="w-full rounded-xl border border-purple-200 bg-white px-3 py-2 text-sm shadow-inner focus:border-purple-400 focus:outline-none"
+                placeholder="e.g. Sunrise Pottery"
+                required
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="text-sm font-semibold text-gray-800" htmlFor="studio-password">
+                Password
+              </label>
+              <input
+                id="studio-password"
+                name="studio-password"
+                type="text"
+                value={studioForm.password}
+                onChange={(event) => setStudioForm((prev) => ({ ...prev, password: event.target.value }))}
+                className="w-full rounded-xl border border-purple-200 bg-white px-3 py-2 text-sm shadow-inner focus:border-purple-400 focus:outline-none"
+                placeholder="Set a shared password"
+                required
+              />
+            </div>
+            <div className="flex items-center gap-2 pt-2">
+              <button
+                type="submit"
+                className="flex-1 rounded-full bg-purple-600 px-4 py-2 text-sm font-semibold text-white shadow-md transition hover:bg-purple-700"
+              >
+                Save changes
+              </button>
+              <button
+                type="button"
+                onClick={() => setStudioForm(studioDetails)}
+                className="rounded-full border border-purple-200 px-4 py-2 text-sm font-semibold text-purple-700 transition hover:bg-purple-50"
+              >
+                Reset
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    ),
+    [studioDetails, studioForm]
   );
 
   const kilnContent = useMemo(
@@ -880,6 +987,12 @@ export default function AdminDashboard({ currentUser }: { currentUser: SessionUs
   );
 
   const tabs: Tab[] = [
+    {
+      id: "studio",
+      label: "Studio",
+      summary: "Edit the studio name and shared password.",
+      content: studioContent,
+    },
     {
       id: "users",
       label: "Users",
