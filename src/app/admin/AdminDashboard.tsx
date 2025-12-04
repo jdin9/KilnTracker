@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { FormEvent, ReactNode, useCallback, useEffect, useMemo, useState } from "react";
+import { ReactNode, useCallback, useEffect, useMemo, useState } from "react";
 
 import type { SessionUser } from "@/server/auth/types";
 
@@ -9,6 +9,7 @@ import { coneChart } from "@/lib/coneReference";
 import { ClayBody, initialClayBodies } from "@/lib/clayBodies";
 import { StudioColor, initialStudioColors } from "@/lib/studioColors";
 import { User, initialUsers } from "@/lib/users";
+import { initialStudios } from "@/lib/studios";
 
 type Tab = {
   id: string;
@@ -55,14 +56,9 @@ const initialKilns: Kiln[] = [
 
 export default function AdminDashboard({ currentUser }: { currentUser: SessionUser }) {
   const [activeTab, setActiveTab] = useState<string>("users");
+  const [studioDetails, setStudioDetails] = useState(initialStudios[0]);
+  const [studioForm, setStudioForm] = useState(studioDetails);
   const [users, setUsers] = useState<User[]>(initialUsers);
-  const [form, setForm] = useState<Omit<User, "id">>({
-    firstName: "",
-    lastName: "",
-    username: "",
-    password: "",
-  });
-  const [editingId, setEditingId] = useState<number | null>(null);
   const [kilns, setKilns] = useState<Kiln[]>(initialKilns);
   const [kilnForm, setKilnForm] = useState<Omit<Kiln, "id">>({
     nickname: "",
@@ -79,11 +75,6 @@ export default function AdminDashboard({ currentUser }: { currentUser: SessionUs
   });
   const [clayBodies, setClayBodies] = useState<ClayBody[]>(initialClayBodies);
   const [clayBodyForm, setClayBodyForm] = useState<string>("");
-
-  const resetForm = useCallback(() => {
-    setForm({ firstName: "", lastName: "", username: "", password: "" });
-    setEditingId(null);
-  }, []);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -104,38 +95,6 @@ export default function AdminDashboard({ currentUser }: { currentUser: SessionUs
     if (typeof window === "undefined") return;
     window.localStorage.setItem(KILN_STORAGE_KEY, JSON.stringify(kilns));
   }, [kilns]);
-
-  const handleSubmit = useCallback(
-    (event: FormEvent<HTMLFormElement>) => {
-      event.preventDefault();
-
-      if (!form.firstName || !form.lastName || !form.username || !form.password) {
-        return;
-      }
-
-      if (editingId) {
-        setUsers((prev) =>
-          prev.map((user) => (user.id === editingId ? { ...user, ...form } : user))
-        );
-      } else {
-        const nextId = users.length ? Math.max(...users.map((user) => user.id)) + 1 : 1;
-        setUsers((prev) => [...prev, { id: nextId, ...form }]);
-      }
-
-      resetForm();
-    },
-    [editingId, form, resetForm, users]
-  );
-
-  const startEdit = useCallback((user: User) => {
-    setEditingId(user.id);
-    setForm({
-      firstName: user.firstName,
-      lastName: user.lastName,
-      username: user.username,
-      password: user.password,
-    });
-  }, []);
 
   const resetKilnForm = useCallback(() => {
     setKilnForm({
@@ -205,35 +164,25 @@ export default function AdminDashboard({ currentUser }: { currentUser: SessionUs
               </p>
               <h2 className="text-2xl font-bold text-gray-900">Manage site accounts</h2>
               <p className="text-sm text-gray-600">
-                Add new team members or reset passwords when someone forgets.
+                Review team members and direct them to self-service sign up when they need access.
               </p>
             </div>
           </div>
 
           <div className="overflow-hidden rounded-2xl border border-purple-100 bg-white shadow-sm">
-            <div className="grid grid-cols-5 bg-purple-50/60 px-4 py-3 text-xs font-semibold uppercase tracking-wide text-purple-800">
+            <div className="grid grid-cols-4 bg-purple-50/60 px-4 py-3 text-xs font-semibold uppercase tracking-wide text-purple-800">
               <span>First Name</span>
               <span>Last Name</span>
               <span>Username</span>
               <span>Password</span>
-              <span className="text-right">Actions</span>
             </div>
             <ul className="divide-y divide-purple-100">
               {users.map((user) => (
-                <li key={user.id} className="grid grid-cols-5 items-center px-4 py-3 text-sm text-gray-800">
+                <li key={user.id} className="grid grid-cols-4 items-center px-4 py-3 text-sm text-gray-800">
                   <span className="font-semibold">{user.firstName}</span>
                   <span>{user.lastName}</span>
                   <span className="font-mono text-xs text-gray-600">{user.username}</span>
                   <span className="font-mono text-xs text-gray-600">•••••••</span>
-                  <div className="flex justify-end gap-2">
-                    <button
-                      type="button"
-                      onClick={() => startEdit(user)}
-                      className="rounded-full border border-purple-200 px-3 py-1 text-xs font-semibold text-purple-700 transition hover:bg-purple-50"
-                    >
-                      Edit
-                    </button>
-                  </div>
                 </li>
               ))}
             </ul>
@@ -241,69 +190,111 @@ export default function AdminDashboard({ currentUser }: { currentUser: SessionUs
         </div>
 
         <div className="rounded-3xl border border-purple-100 bg-purple-50 p-6 shadow-inner">
-          <h3 className="text-lg font-semibold text-gray-900">
-            {editingId ? "Edit user" : "Add a new user"}
-          </h3>
+          <h3 className="text-lg font-semibold text-gray-900">Self-serve access</h3>
           <p className="mt-1 text-sm text-gray-600">
-            {editingId
-              ? "Update the user's password or details and save the changes."
-              : "Create a new account with manual entry for all fields."}
+            New users can register themselves from the Login / Sign Up page. Share your studio name
+            and password so they can verify membership during registration.
           </p>
-          <form className="mt-4 space-y-3" onSubmit={handleSubmit}>
+          <div className="mt-4 space-y-2 text-sm text-gray-700">
+            <p className="font-semibold text-gray-900">Studio details</p>
+            <div className="rounded-2xl bg-white p-4 shadow-inner ring-1 ring-purple-100">
+              <div className="flex items-center justify-between text-xs font-semibold uppercase tracking-wide text-purple-700">
+                <span>Studio</span>
+                <span>Password</span>
+              </div>
+              <div className="mt-2 grid grid-cols-2 items-center gap-2 text-sm text-gray-900">
+                <span>{studioDetails.name}</span>
+                <span className="font-mono text-xs text-gray-600">{studioDetails.password}</span>
+              </div>
+            </div>
+            <p className="text-xs text-gray-600">
+              Users will need these values to sign up; you can update them in the Studio tab if
+              anything changes.
+            </p>
+          </div>
+        </div>
+      </div>
+    ),
+    [studioDetails, users]
+  );
+
+  const studioContent = useMemo(
+    () => (
+      <div className="grid gap-8 lg:grid-cols-3">
+        <div className="lg:col-span-2 space-y-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-semibold uppercase tracking-wide text-purple-700">Studio</p>
+              <h2 className="text-2xl font-bold text-gray-900">Studio identity</h2>
+              <p className="text-sm text-gray-600">
+                Update the studio name and shared access password used across the team.
+              </p>
+            </div>
+          </div>
+
+          <div className="rounded-2xl border border-purple-100 bg-white shadow-sm">
+            <div className="flex items-center justify-between border-b border-purple-100 px-4 py-3">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wide text-purple-700">Current studio</p>
+                <h3 className="text-lg font-bold text-gray-900">{studioDetails.name}</h3>
+                <p className="text-sm text-gray-600">Password is kept private but can be updated below.</p>
+              </div>
+              <div className="rounded-full bg-purple-50 px-3 py-1 text-xs font-semibold text-purple-800 ring-1 ring-purple-100">
+                Managed by admin
+              </div>
+            </div>
+            <dl className="grid grid-cols-2 gap-4 px-4 py-4 text-sm text-gray-700">
+              <div className="space-y-1">
+                <dt className="text-xs font-semibold uppercase tracking-wide text-purple-700">Studio name</dt>
+                <dd className="font-semibold text-gray-900">{studioDetails.name}</dd>
+              </div>
+              <div className="space-y-1">
+                <dt className="text-xs font-semibold uppercase tracking-wide text-purple-700">Password</dt>
+                <dd className="font-mono text-xs text-gray-600">••••••••••</dd>
+              </div>
+            </dl>
+          </div>
+        </div>
+
+        <div className="rounded-3xl border border-purple-100 bg-purple-50 p-6 shadow-inner">
+          <h3 className="text-lg font-semibold text-gray-900">Edit studio details</h3>
+          <p className="mt-1 text-sm text-gray-600">
+            Change the displayed studio name or rotate the shared password.
+          </p>
+          <form
+            className="mt-4 space-y-3"
+            onSubmit={(event: FormEvent<HTMLFormElement>) => {
+              event.preventDefault();
+              if (!studioForm.name.trim() || !studioForm.password.trim()) return;
+              setStudioDetails(studioForm);
+            }}
+          >
             <div className="space-y-1">
-              <label className="text-sm font-semibold text-gray-800" htmlFor="firstName">
-                First Name
+              <label className="text-sm font-semibold text-gray-800" htmlFor="studio-name">
+                Studio name
               </label>
               <input
-                id="firstName"
-                name="firstName"
-                value={form.firstName}
-                onChange={(event) => setForm((prev) => ({ ...prev, firstName: event.target.value }))}
+                id="studio-name"
+                name="studio-name"
+                value={studioForm.name}
+                onChange={(event) => setStudioForm((prev) => ({ ...prev, name: event.target.value }))}
                 className="w-full rounded-xl border border-purple-200 bg-white px-3 py-2 text-sm shadow-inner focus:border-purple-400 focus:outline-none"
-                placeholder="Jordan"
+                placeholder="e.g. Sunrise Pottery"
                 required
               />
             </div>
             <div className="space-y-1">
-              <label className="text-sm font-semibold text-gray-800" htmlFor="lastName">
-                Last Name
-              </label>
-              <input
-                id="lastName"
-                name="lastName"
-                value={form.lastName}
-                onChange={(event) => setForm((prev) => ({ ...prev, lastName: event.target.value }))}
-                className="w-full rounded-xl border border-purple-200 bg-white px-3 py-2 text-sm shadow-inner focus:border-purple-400 focus:outline-none"
-                placeholder="Patel"
-                required
-              />
-            </div>
-            <div className="space-y-1">
-              <label className="text-sm font-semibold text-gray-800" htmlFor="username">
-                Username
-              </label>
-              <input
-                id="username"
-                name="username"
-                value={form.username}
-                onChange={(event) => setForm((prev) => ({ ...prev, username: event.target.value }))}
-                className="w-full rounded-xl border border-purple-200 bg-white px-3 py-2 text-sm shadow-inner focus:border-purple-400 focus:outline-none"
-                placeholder="jpatel"
-                required
-              />
-            </div>
-            <div className="space-y-1">
-              <label className="text-sm font-semibold text-gray-800" htmlFor="password">
+              <label className="text-sm font-semibold text-gray-800" htmlFor="studio-password">
                 Password
               </label>
               <input
-                id="password"
-                name="password"
+                id="studio-password"
+                name="studio-password"
                 type="text"
-                value={form.password}
-                onChange={(event) => setForm((prev) => ({ ...prev, password: event.target.value }))}
+                value={studioForm.password}
+                onChange={(event) => setStudioForm((prev) => ({ ...prev, password: event.target.value }))}
                 className="w-full rounded-xl border border-purple-200 bg-white px-3 py-2 text-sm shadow-inner focus:border-purple-400 focus:outline-none"
-                placeholder="Set a secure password"
+                placeholder="Set a shared password"
                 required
               />
             </div>
@@ -312,23 +303,21 @@ export default function AdminDashboard({ currentUser }: { currentUser: SessionUs
                 type="submit"
                 className="flex-1 rounded-full bg-purple-600 px-4 py-2 text-sm font-semibold text-white shadow-md transition hover:bg-purple-700"
               >
-                {editingId ? "Save changes" : "Add user"}
+                Save changes
               </button>
-              {editingId && (
-                <button
-                  type="button"
-                  onClick={resetForm}
-                  className="rounded-full border border-purple-200 px-4 py-2 text-sm font-semibold text-purple-700 transition hover:bg-purple-50"
-                >
-                  Cancel
-                </button>
-              )}
+              <button
+                type="button"
+                onClick={() => setStudioForm(studioDetails)}
+                className="rounded-full border border-purple-200 px-4 py-2 text-sm font-semibold text-purple-700 transition hover:bg-purple-50"
+              >
+                Reset
+              </button>
             </div>
           </form>
         </div>
       </div>
     ),
-    [users, form, editingId, handleSubmit, startEdit, resetForm]
+    [studioDetails, studioForm]
   );
 
   const kilnContent = useMemo(
@@ -880,6 +869,12 @@ export default function AdminDashboard({ currentUser }: { currentUser: SessionUs
   );
 
   const tabs: Tab[] = [
+    {
+      id: "studio",
+      label: "Studio",
+      summary: "Edit the studio name and shared password.",
+      content: studioContent,
+    },
     {
       id: "users",
       label: "Users",
