@@ -7,7 +7,15 @@ export type StoredProject = {
   notes?: string;
   bisqueTemp?: number;
   glazes?: string[];
+  photos?: StoredProjectPhoto[];
+  coverPhoto?: StoredProjectPhoto;
   steps: any[];
+};
+
+export type StoredProjectPhoto = {
+  id: string;
+  name: string;
+  url: string;
 };
 
 const STORAGE_KEY = "kilntracker.projects";

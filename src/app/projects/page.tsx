@@ -39,6 +39,20 @@ const mockProjects = [
   },
 ];
 
+const selectProjectCover = (project: StoredProject): string | null => {
+  const firingWithPhotos =
+    project.steps
+      ?.slice()
+      .reverse()
+      .find((step: any) => step.type === "firing" && step.photos?.length) ?? null;
+
+  if (firingWithPhotos) {
+    return firingWithPhotos.photos[0]?.url || null;
+  }
+
+  return project.coverPhoto?.url || project.photos?.[0]?.url || null;
+};
+
 type Filters = {
   search?: string;
   clayBody?: string;
@@ -73,7 +87,12 @@ export default function ProjectsPage() {
       (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
     );
 
-    return [...sortedStored, ...mockProjects];
+    const storedWithCovers = sortedStored.map((project) => ({
+      ...project,
+      coverUrl: selectProjectCover(project),
+    }));
+
+    return [...storedWithCovers, ...mockProjects];
   }, [storedProjects]);
 
   const filteredProjects = useMemo(() => {

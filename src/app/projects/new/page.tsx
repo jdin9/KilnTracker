@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useMemo, useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
@@ -27,7 +28,7 @@ export default function NewProjectPage() {
     makerName: "",
     notes: "",
   });
-  const [selectedImageNames, setSelectedImageNames] = useState<string[]>([]);
+  const [initialPhotos, setInitialPhotos] = useState<{ name: string; url: string }[]>([]);
 
   const clayBodyOptions = useMemo(() => initialClayBodies, []);
   const bisqueConeOptions = useMemo(() => coneChart, []);
@@ -48,6 +49,11 @@ export default function NewProjectPage() {
       maker_name: form.makerName || undefined,
       notes: form.notes || undefined,
     });
+    const initialPhotoEntries = initialPhotos.map((photo, index) => ({
+      id: `project-photo-${Date.now()}-${index}`,
+      name: photo.name,
+      url: photo.url,
+    }));
     saveStoredProject({
       id: res.id,
       title: form.title || "Untitled Project",
@@ -59,6 +65,8 @@ export default function NewProjectPage() {
       bisqueTemp: form.bisqueCone
         ? bisqueConeOptions.find((entry) => entry.cone === form.bisqueCone)?.temperatureF
         : undefined,
+      photos: initialPhotoEntries,
+      coverPhoto: initialPhotoEntries[0],
       glazes: [],
       steps: [],
     });
@@ -200,23 +208,37 @@ export default function NewProjectPage() {
                 accept="image/*"
                 multiple
                 className="sr-only"
-                onChange={(event) =>
-                  setSelectedImageNames(
-                    Array.from(event.target.files || []).map((file) => file.name)
-                  )
-                }
+                onChange={(event) => {
+                  const files = Array.from(event.target.files || []);
+                  const previews = files.map((file) => ({
+                    name: file.name,
+                    url: URL.createObjectURL(file),
+                  }));
+                  setInitialPhotos(previews);
+                }}
               />
 
-              {selectedImageNames.length > 0 ? (
-                <div className="space-y-1 text-xs text-purple-100">
-                  <p className="font-semibold">Selected {selectedImageNames.length} image(s):</p>
-                  <ul className="space-y-1">
-                    {selectedImageNames.map((name) => (
-                      <li key={name} className="truncate" title={name}>
-                        • {name}
-                      </li>
+              {initialPhotos.length > 0 ? (
+                <div className="space-y-2 text-xs text-purple-100">
+                  <p className="font-semibold">Selected {initialPhotos.length} image(s):</p>
+                  <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                    {initialPhotos.map((photo) => (
+                      <div key={photo.name} className="flex flex-col items-center gap-1">
+                        <div className="overflow-hidden rounded-lg border border-white/40 bg-white/10 p-1">
+                          <Image
+                            src={photo.url}
+                            alt={photo.name}
+                            width={64}
+                            height={64}
+                            className="h-16 w-16 rounded-md object-cover"
+                          />
+                        </div>
+                        <span className="w-20 text-center text-[11px] leading-tight text-purple-50 break-words">
+                          {photo.name}
+                        </span>
+                      </div>
                     ))}
-                  </ul>
+                  </div>
                 </div>
               ) : (
                 <p className="text-xs text-purple-100">No images selected yet.</p>
