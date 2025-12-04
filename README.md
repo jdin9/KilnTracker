@@ -58,7 +58,7 @@ src/
 
 ## Getting started (draft)
 1. Install dependencies: `npm install`.
-2. Set up a PostgreSQL database and create a `.env` with `DATABASE_URL`.
+2. Copy `.env.example` to `.env` and fill in `DATABASE_URL`, admin credentials, and a strong `SESSION_SECRET`.
 3. Run migrations once the schema stabilizes: `npx prisma migrate dev`.
 4. Start the dev server: `npm run dev`.
 
