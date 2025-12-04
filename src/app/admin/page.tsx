@@ -27,11 +27,6 @@ type Kiln = {
   dialPositions?: string[];
 };
 
-type ClayBody = {
-  id: number;
-  name: string;
-};
-
 const KILN_STORAGE_KEY = "kiln-admin-kilns";
 
 const initialKilns: Kiln[] = [
@@ -54,12 +49,6 @@ const initialKilns: Kiln[] = [
     manualControl: "dial",
     dialPositions: ["Low", "Medium", "High"],
   },
-];
-
-const initialClayBodies: ClayBody[] = [
-  { id: 1, name: "Stoneware 266" },
-  { id: 2, name: "Porcelain P10" },
-  { id: 3, name: "Speckled Buff" },
 ];
 
 export default function AdminPage() {
