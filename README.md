@@ -62,6 +62,14 @@ src/
 3. Run migrations once the schema stabilizes: `npx prisma migrate dev`.
 4. Start the dev server: `npm run dev`.
 
+### npm install troubleshooting
+- A `403 Forbidden` from the proxy for packages such as `@prisma/client` means the MITM proxy is blocking the request; ask your
+  network admin to allow `https://registry.npmjs.org/` (and the `@prisma` scope) through the proxy.
+- Keep the provided MITM CA at `/usr/local/share/ca-certificates/envoy-mitmproxy-ca-cert.crt` and `strict-ssl=false` in `.npmrc`
+  so TLS handshakes succeed when the proxy forwards requests.
+- If your environment bypasses the proxy entirely, remove `proxy`/`https-proxy` entries from `.npmrc` so npm talks to the registry
+  directly instead of hitting the blocked proxy.
+
 ## Previewing the draft dashboard
 Until the Next.js tooling is wired up in this repo, you can view a static preview of the draft dashboard layout at
 `preview/dashboard.html`. From the repo root run `python -m http.server 8000` and open
