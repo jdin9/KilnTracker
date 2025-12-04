@@ -184,23 +184,6 @@ export default function ProjectsPage() {
     }));
   };
 
-  const filtersAppliedCount = useMemo(() => {
-    let count = 0;
-    count += filters.selectedGlazes.length;
-    count += filters.search ? 1 : 0;
-    count += filters.clayBody ? 1 : 0;
-    count += filters.cone ? 1 : 0;
-    count += filters.showFired && filters.showUnfired ? 0 : 1;
-    return count;
-  }, [
-    filters.clayBody,
-    filters.cone,
-    filters.search,
-    filters.selectedGlazes.length,
-    filters.showFired,
-    filters.showUnfired,
-  ]);
-
   const clearFilters = () => setFilters({ ...defaultFilters });
 
   return (
@@ -231,7 +214,7 @@ export default function ProjectsPage() {
           </Link>
         </div>
 
-        <section className="grid gap-4 md:grid-cols-3">
+        <section className="grid gap-4 md:grid-cols-2">
           <div className="rounded-2xl bg-white/80 p-4 shadow-sm ring-1 ring-purple-100">
             <p className="text-xs font-semibold uppercase tracking-wide text-purple-700">Active Glazes</p>
             <p className="mt-2 text-2xl font-bold text-gray-900">{activeGlazes.length}</p>
@@ -241,11 +224,6 @@ export default function ProjectsPage() {
             <p className="text-xs font-semibold uppercase tracking-wide text-purple-700">Total Projects</p>
             <p className="mt-2 text-2xl font-bold text-gray-900">{combinedProjects.length}</p>
             <p className="text-sm text-gray-600">Across all makers</p>
-          </div>
-          <div className="rounded-2xl bg-purple-600 p-4 text-white shadow-sm ring-1 ring-purple-500/50">
-            <p className="text-xs font-semibold uppercase tracking-wide">Filters Applied</p>
-            <p className="mt-2 text-2xl font-bold">{filtersAppliedCount}</p>
-            <p className="text-sm text-purple-100">Use the filter dropdown to refine projects.</p>
           </div>
         </section>
 
