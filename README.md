@@ -58,9 +58,9 @@ src/
 
 ## Getting started (draft)
 1. Install dependencies: `npm install`.
-2. Copy `.env.example` to `.env` and fill in `DATABASE_URL`, admin credentials, and a strong `SESSION_SECRET`.
+2. Copy `.env.example` to `.env` (or `.env.local`) and set a real `DATABASE_URL`, admin credentials, and a strong `SESSION_SECRET`. The app will fall back to the example values in development, but production **must** set its own secrets.
 3. Run migrations once the schema stabilizes: `npx prisma migrate dev`.
-4. Start the dev server: `npm run dev`.
+4. Start the dev server: `npm run dev` (or `npm run tracker` if you prefer that shortcut).
 
 ### npm install troubleshooting
 - A `403 Forbidden` from the proxy for packages such as `@prisma/client` means the MITM proxy is blocking the request; ask your
