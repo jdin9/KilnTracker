@@ -94,73 +94,9 @@ const defaultOpenFirings: OpenFiring[] = [
   },
 ];
 
-const defaultHistory: FiringHistoryRow[] = [
-  {
-    id: "11",
-    date: "2024-05-25T12:00:00Z",
-    kiln: "Big Manual Kiln",
-    kilnModel: "Skutt KM1227",
-    location: "Studio North",
-    firingType: "glaze",
-    targetCone: "6",
-    targetTemp: 2232,
-    tempReached: 2225,
-    status: "Completed",
-    endTime: "2024-05-25T22:10:00Z",
-    loadPhotos: [
-      { name: "load-front.jpg", src: resolvePhotoUrl("load-front.jpg", 0) },
-      { name: "load-side.jpg", src: resolvePhotoUrl("load-side.jpg", 1) },
-    ],
-    firstPhoto: getFirstPhoto([
-      { name: "load-front.jpg", src: resolvePhotoUrl("load-front.jpg", 0) },
-      { name: "load-side.jpg", src: resolvePhotoUrl("load-side.jpg", 1) },
-    ]),
-    pieces: [
-      { name: "Mugs (8)", notes: "Shino outside" },
-      { name: "Dinner plates (4)", notes: "Celadon" },
-    ],
-  },
-  {
-    id: "12",
-    date: "2024-05-10T14:30:00Z",
-    kiln: "Small Electric Kiln",
-    kilnModel: "Olympic 1823E",
-    location: "Studio Annex",
-    firingType: "bisque",
-    targetCone: "04",
-    targetTemp: 1940,
-    tempReached: 1935,
-    status: "Completed",
-    endTime: "2024-05-10T21:45:00Z",
-    loadPhotos: [{ name: "test-bisque.jpg", src: resolvePhotoUrl("test-bisque.jpg", 2) }],
-    firstPhoto: getFirstPhoto([{ name: "test-bisque.jpg", src: resolvePhotoUrl("test-bisque.jpg", 2) }]),
-    pieces: [
-      { name: "Test tiles (12)" },
-      { name: "Cups (6)", notes: "Handle stress test" },
-    ],
-  },
-  {
-    id: "13",
-    date: "2024-04-28T10:45:00Z",
-    kiln: "Test Kiln",
-    kilnModel: "Manual Dial Kiln",
-    location: "Studio Backroom",
-    firingType: "glaze",
-    targetCone: "06",
-    targetTemp: 1830,
-    tempReached: 1810,
-    status: "Aborted",
-    endTime: "2024-04-28T13:20:00Z",
-    pieces: [
-      { name: "Bowls (3)" },
-      { name: "Tiles (5)", notes: "Ran cold; glaze pinholes" },
-    ],
-  },
-];
-
 export default function KilnDashboardPage() {
   const [openFirings, setOpenFirings] = useState<OpenFiring[]>(defaultOpenFirings);
-  const [firingHistory, setFiringHistory] = useState<FiringHistoryRow[]>(defaultHistory);
+  const [firingHistory, setFiringHistory] = useState<FiringHistoryRow[]>([]);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [selectedKiln, setSelectedKiln] = useState<string>("all");
   const [selectedCone, setSelectedCone] = useState<string>("all");
@@ -212,13 +148,12 @@ export default function KilnDashboardPage() {
                 firstPhoto: collected[0] ?? firing.firstPhoto ?? getFirstPhoto(firing.loadPhotos),
               };
             })
-          : defaultHistory;
+          : [];
         setFiringHistory(normalizedHistory);
-      } else {
-        window.localStorage.setItem("kiln-firing-history", JSON.stringify(defaultHistory));
       }
     } catch (error) {
       console.error("Unable to parse firing history", error);
+      setFiringHistory([]);
     }
   }, []);
 
@@ -614,6 +549,13 @@ export default function KilnDashboardPage() {
                     </td>
                   </tr>
                 ))}
+                {filteredHistory.length === 0 && (
+                  <tr>
+                    <td colSpan={7} className="px-6 py-6 text-center text-sm text-gray-600">
+                      No firing history yet. Close a firing to see it here.
+                    </td>
+                  </tr>
+                )}
               </tbody>
             </table>
           </div>
