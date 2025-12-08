@@ -3,7 +3,7 @@
 import { FormEvent, useMemo, useState } from "react";
 import Link from "next/link";
 
-import { initialStudios } from "@/lib/studios";
+import { DEFAULT_STUDIO, getClientStudioDetails, getClientStudioPassword } from "@/lib/studioStorage";
 
 type Account = {
   id: number;
@@ -23,7 +23,7 @@ const initialAccounts: Account[] = [
     lastName: "Rivera",
     nickname: "Jamie",
     password: "wheelThrow123",
-    studioName: initialStudios[0].name,
+    studioName: DEFAULT_STUDIO.name,
   },
   {
     id: 2,
@@ -32,7 +32,7 @@ const initialAccounts: Account[] = [
     lastName: "Shaw",
     nickname: "Tay",
     password: "glazeGuard!",
-    studioName: initialStudios[0].name,
+    studioName: DEFAULT_STUDIO.name,
   },
 ];
 
@@ -52,7 +52,7 @@ export default function AuthPage() {
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const studioOptions = useMemo(() => initialStudios.map((studio) => studio.name), []);
+  const studioOptions = useMemo(() => [getClientStudioDetails().name], []);
 
   const handleLogin = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -89,13 +89,13 @@ export default function AuthPage() {
       return;
     }
 
-    const studioMatch = initialStudios.find(
-      (studio) =>
-        studio.name.trim().toLowerCase() === signupForm.studioName.trim().toLowerCase() &&
-        studio.password === signupForm.studioPassword
-    );
+    const studioMatch = getClientStudioDetails();
 
-    if (!studioMatch) {
+    const nameMatches =
+      studioMatch.name.trim().toLowerCase() === signupForm.studioName.trim().toLowerCase();
+    const passwordMatches = getClientStudioPassword() === signupForm.studioPassword;
+
+    if (!nameMatches || !passwordMatches) {
       setError("Studio credentials didn't match. Reach out to your admin for the correct details.");
       return;
     }

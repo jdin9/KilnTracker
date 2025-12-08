@@ -8,8 +8,8 @@ import type { SessionUser } from "@/server/auth/types";
 import { coneChart } from "@/lib/coneReference";
 import { ClayBody, initialClayBodies } from "@/lib/clayBodies";
 import { StudioColor, initialStudioColors } from "@/lib/studioColors";
+import { DEFAULT_STUDIO, ensureStudioPasswordCookie, getClientStudioDetails, persistStudioDetails } from "@/lib/studioStorage";
 import { User, initialUsers } from "@/lib/users";
-import { initialStudios } from "@/lib/studios";
 
 type Tab = {
   id: string;
@@ -56,7 +56,7 @@ const initialKilns: Kiln[] = [
 
 export default function AdminDashboard({ currentUser }: { currentUser: SessionUser }) {
   const [activeTab, setActiveTab] = useState<string>("users");
-  const [studioDetails, setStudioDetails] = useState(initialStudios[0]);
+  const [studioDetails, setStudioDetails] = useState(DEFAULT_STUDIO);
   const [studioForm, setStudioForm] = useState(studioDetails);
   const [users, setUsers] = useState<User[]>(initialUsers);
   const [kilns, setKilns] = useState<Kiln[]>(initialKilns);
@@ -75,6 +75,13 @@ export default function AdminDashboard({ currentUser }: { currentUser: SessionUs
   });
   const [clayBodies, setClayBodies] = useState<ClayBody[]>(initialClayBodies);
   const [clayBodyForm, setClayBodyForm] = useState<string>("");
+
+  useEffect(() => {
+    const storedStudio = getClientStudioDetails();
+    setStudioDetails(storedStudio);
+    setStudioForm(storedStudio);
+    ensureStudioPasswordCookie(storedStudio.password);
+  }, []);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -266,7 +273,9 @@ export default function AdminDashboard({ currentUser }: { currentUser: SessionUs
             onSubmit={(event: FormEvent<HTMLFormElement>) => {
               event.preventDefault();
               if (!studioForm.name.trim() || !studioForm.password.trim()) return;
-              setStudioDetails(studioForm);
+              const updatedStudio = { ...studioForm };
+              setStudioDetails(updatedStudio);
+              persistStudioDetails(updatedStudio);
             }}
           >
             <div className="space-y-1">
