@@ -4,6 +4,7 @@ import { FormEvent, useMemo, useState } from "react";
 import Link from "next/link";
 
 import { DEFAULT_STUDIO, getClientStudioDetails, getClientStudioPassword } from "@/lib/studioStorage";
+import { initialStudios } from "@/lib/studios";
 
 type Account = {
   id: number;

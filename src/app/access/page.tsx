@@ -1,12 +1,28 @@
 "use client";
 
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, Suspense, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 
 import { getClientStudioDetails, getClientStudioPassword, setSiteAccessCookie } from "@/lib/studioStorage";
 
 export default function AccessPage() {
+  return (
+    <Suspense
+      fallback={
+        <main className="flex min-h-screen items-center justify-center bg-gradient-to-br from-purple-50 via-white to-indigo-100 px-6 py-10">
+          <div className="w-full max-w-xl rounded-3xl border border-purple-100 bg-white p-8 shadow-xl">
+            <p className="text-center text-sm font-semibold text-purple-700">Loading studio access…</p>
+          </div>
+        </main>
+      }
+    >
+      <AccessForm />
+    </Suspense>
+  );
+}
+
+function AccessForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [code, setCode] = useState("");
