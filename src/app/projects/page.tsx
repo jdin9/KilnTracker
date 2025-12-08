@@ -9,58 +9,6 @@ import { formatDate } from "@/lib/dateFormat";
 import { getActiveStudioColors, initialStudioColors } from "@/lib/studioColors";
 import { loadStoredProjects, StoredProject } from "@/lib/projectStorage";
 
-// TODO: replace with real tRPC hooks, e.g., useProjects(filters)
-const mockProjects = [
-  {
-    id: "p1",
-    title: "Celadon Carved Vase",
-    clayBody: initialClayBodies[0]?.name ?? "Stoneware 266",
-    makerName: "Alex",
-    createdAt: new Date().toISOString(),
-    coverUrl: null,
-    glazes: ["Celadon", "Satin White"],
-    steps: [
-      {
-        id: "f1",
-        type: "firing",
-        cone: "6",
-        peakTemp: 2232,
-        firingDate: new Date().toISOString(),
-        photos: [],
-      },
-    ],
-  },
-  {
-    id: "p2",
-    title: "Shino Serving Set",
-    clayBody: initialClayBodies[1]?.name ?? "Porcelain P10",
-    makerName: "Jamie",
-    createdAt: new Date().toISOString(),
-    coverUrl: null,
-    glazes: ["Shino"],
-    steps: [],
-  },
-  {
-    id: "p3",
-    title: "Floating Blue Mugs",
-    clayBody: initialClayBodies[2]?.name ?? "Speckled Buff",
-    makerName: "Taylor",
-    createdAt: new Date().toISOString(),
-    coverUrl: null,
-    glazes: ["Floating Blue"],
-    steps: [
-      {
-        id: "f2",
-        type: "firing",
-        cone: "10",
-        peakTemp: 2381,
-        firingDate: new Date().toISOString(),
-        photos: [],
-      },
-    ],
-  },
-];
-
 const collectProjectGlazes = (project: StoredProject) => {
   const glazesFromSteps = (project.steps || [])
     .filter((step: any) => step.type === "glaze" && step.glazeName)
@@ -262,12 +210,7 @@ export default function ProjectsPage() {
       coverUrl: selectProjectCover(project),
     }));
 
-    const normalizedMocks = mockProjects.map((project) => ({
-      ...project,
-      glazes: collectProjectGlazes(project as StoredProject),
-    }));
-
-    return [...storedWithCovers, ...normalizedMocks];
+    return storedWithCovers;
   }, [storedProjects]);
 
   const makerOptions = useMemo(() => {

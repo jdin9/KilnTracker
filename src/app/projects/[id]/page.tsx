@@ -15,37 +15,6 @@ import {
   type StoredProjectPhoto,
 } from "@/lib/projectStorage";
 
-// TODO: replace with trpc.project.detail.useQuery
-const mockProject = {
-  id: "p1",
-  title: "Vase",
-  clayBody: "B-Mix",
-  makerName: "Alex",
-  notes: "Example project notes.",
-  coverUrl: null as string | null,
-  steps: [
-    {
-      id: "s1",
-      type: "glaze",
-      glazeName: "Fog",
-      numCoats: 2,
-      applicationMethod: "dip",
-      patternDescription: "full dip",
-      notes: "",
-      photos: [],
-    },
-    {
-      id: "s2",
-      type: "firing",
-      firingId: "1",
-      cone: "6",
-      peakTemp: 1825,
-      firingDate: new Date().toISOString(),
-      photos: [],
-    },
-  ],
-};
-
 const collectProjectGlazes = (project: StoredProject) => {
   const glazesFromSteps = (project.steps || [])
     .filter((step: any) => step.type === "glaze" && step.glazeName)
@@ -78,20 +47,6 @@ export default function ProjectDetailPage({ params }: { params: { id: string } }
       return;
     }
 
-    if (params.id === mockProject.id) {
-      setData({
-        id: mockProject.id,
-        title: mockProject.title,
-        clayBody: mockProject.clayBody,
-        makerName: mockProject.makerName,
-        createdAt: new Date().toISOString(),
-        notes: mockProject.notes,
-        steps: mockProject.steps,
-        glazes: collectProjectGlazes(mockProject as unknown as StoredProject),
-      });
-      return;
-    }
-
     setData(null);
   }, [params.id, storedProjects]);
 
@@ -101,9 +56,7 @@ export default function ProjectDetailPage({ params }: { params: { id: string } }
     const confirmDelete = window.confirm("Delete this project and all of its steps?");
     if (!confirmDelete) return;
 
-    if (params.id !== mockProject.id) {
-      deleteStoredProject(data.id);
-    }
+    deleteStoredProject(data.id);
 
     router.push("/projects");
   };
@@ -157,9 +110,7 @@ export default function ProjectDetailPage({ params }: { params: { id: string } }
         steps: updatedSteps,
         glazes: collectProjectGlazes({ ...prev, steps: updatedSteps }),
       };
-      if (params.id !== mockProject.id) {
-        saveStoredProject(updated);
-      }
+      saveStoredProject(updated);
       return updated;
     });
 
