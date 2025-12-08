@@ -14,22 +14,22 @@ import {
 } from '../../services/projectService';
 
 export const projectRouter = router({
-  create: protectedProcedure.input(createProjectInputSchema).mutation(async ({ ctx, input }) => {
+  create: protectedProcedure.input(createProjectInputSchema).mutation(async ({ ctx, input }: any) => {
     const user = getCurrentUser(ctx);
     return createProject(ctx, user, input);
   }),
 
-  addGlazeStep: protectedProcedure.input(addGlazeStepInputSchema).mutation(async ({ ctx, input }) => {
+  addGlazeStep: protectedProcedure.input(addGlazeStepInputSchema).mutation(async ({ ctx, input }: any) => {
     const user = getCurrentUser(ctx);
     return addGlazeStep(ctx, user, input);
   }),
 
-  addFiringStep: protectedProcedure.input(addFiringStepInputSchema).mutation(async ({ ctx, input }) => {
+  addFiringStep: protectedProcedure.input(addFiringStepInputSchema).mutation(async ({ ctx, input }: any) => {
     const user = getCurrentUser(ctx);
     return addFiringStep(ctx, user, input);
   }),
 
-  detail: protectedProcedure.input(projectDetailInputSchema).query(async ({ ctx, input }) => {
+  detail: protectedProcedure.input(projectDetailInputSchema).query(async ({ ctx, input }: any) => {
     const user = getCurrentUser(ctx);
     return getProjectDetail(ctx, user, input.projectId);
   }),

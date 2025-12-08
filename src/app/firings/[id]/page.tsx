@@ -349,6 +349,8 @@ export default function FiringDetailPage({ params }: { params: { id: string } })
     );
   }
 
+  if (!firing) return null;
+
   const handleAddActivity = (e: React.FormEvent) => {
     e.preventDefault();
     const inferredType: ActivityType = form.closeFiring
@@ -372,6 +374,11 @@ export default function FiringDetailPage({ params }: { params: { id: string } })
 
     if (form.tempOnly && !form.pyrometerTemp) {
       alert("Temperature is required when logging a temp-only reading.");
+      return;
+    }
+
+    if (!firing) {
+      alert("Unable to record activity because the firing record is missing.");
       return;
     }
 
