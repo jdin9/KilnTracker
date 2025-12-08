@@ -3,7 +3,7 @@
 
 import React, { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, useRouter } from "next/navigation";
 
 import { formatDateTime } from "@/lib/dateFormat";
 
@@ -243,11 +243,28 @@ const safePersist = (key: string, value: string) => {
   }
 };
 
+const removeStoredItem = (key: string) => {
+  if (typeof window === "undefined") return;
+
+  try {
+    window.localStorage.removeItem(key);
+  } catch (error) {
+    console.warn(`Unable to remove ${key} from localStorage`, error);
+  }
+
+  try {
+    window.sessionStorage.removeItem(key);
+  } catch (error) {
+    console.warn(`Unable to remove ${key} from sessionStorage`, error);
+  }
+};
+
 export default function FiringDetailPage({ params }: { params: { id: string } }) {
   const [firing, setFiring] = useState<Firing | null>(null);
   const [kilnConfig, setKilnConfig] = useState<Kiln | null>(null);
   const [activities, setActivities] = useState<Activity[]>([]);
   const [loading, setLoading] = useState(true);
+  const router = useRouter();
   const [form, setForm] = useState({
     timestamp: nowLocal(),
     dialPosition: "",
@@ -474,6 +491,46 @@ export default function FiringDetailPage({ params }: { params: { id: string } })
     setActivities((prev) => prev.filter((activity) => activity.id !== id));
   };
 
+  const handleDeleteFiringFromHistory = () => {
+    if (!firing || firing.status !== "closed") return;
+
+    const confirmDelete = window.confirm("Remove this firing from history? This cannot be undone.");
+    if (!confirmDelete) return;
+
+    const historyRaw = window.localStorage.getItem("kiln-firing-history");
+    let updatedHistory: any[] = [];
+
+    if (historyRaw) {
+      try {
+        const parsed = JSON.parse(historyRaw);
+        if (Array.isArray(parsed)) {
+          updatedHistory = parsed.filter((entry) => entry.id !== firing.id);
+        }
+      } catch (error) {
+        console.error("Unable to parse firing history for deletion", error);
+      }
+    }
+
+    safePersist("kiln-firing-history", JSON.stringify(updatedHistory));
+
+    const historyDetailRaw = window.localStorage.getItem(HISTORY_DETAIL_KEY);
+    if (historyDetailRaw) {
+      try {
+        const parsed = JSON.parse(historyDetailRaw);
+        if (parsed?.[firing.id]) {
+          delete parsed[firing.id];
+          safePersist(HISTORY_DETAIL_KEY, JSON.stringify(parsed));
+        }
+      } catch (error) {
+        console.error("Unable to update history details during deletion", error);
+      }
+    }
+
+    removeStoredItem(`firing-${firing.id}-events`);
+
+    router.push("/kiln");
+  };
+
   const statusLabel = firing.status === "open" ? "Open firing" : "Closed";
 
   return (
@@ -501,25 +558,44 @@ export default function FiringDetailPage({ params }: { params: { id: string } })
               </p>
             </div>
           </div>
-          <div className="rounded-2xl bg-white/80 p-4 shadow-sm ring-1 ring-purple-100">
-            <dl className="grid grid-cols-2 gap-x-6 gap-y-2 text-sm text-gray-700">
-              <div>
-                <dt className="text-xs uppercase tracking-wide text-gray-500">Kiln</dt>
-                <dd className="font-semibold text-gray-900">{firing.kilnName}</dd>
-              </div>
-              <div>
-                <dt className="text-xs uppercase tracking-wide text-gray-500">Model</dt>
-                <dd className="font-semibold text-gray-900">{firing.kilnModel}</dd>
-              </div>
-              <div>
-                <dt className="text-xs uppercase tracking-wide text-gray-500">Location</dt>
-                <dd className="font-semibold text-gray-900">{firing.location}</dd>
-              </div>
-              <div>
-                <dt className="text-xs uppercase tracking-wide text-gray-500">Target temp</dt>
-                <dd className="font-semibold text-gray-900">{firing.targetTemp ? `${firing.targetTemp}°F` : "—"}</dd>
-              </div>
-            </dl>
+          <div className="flex flex-col gap-3 sm:items-end">
+            <div className="rounded-2xl bg-white/80 p-4 shadow-sm ring-1 ring-purple-100">
+              <dl className="grid grid-cols-2 gap-x-6 gap-y-2 text-sm text-gray-700">
+                <div>
+                  <dt className="text-xs uppercase tracking-wide text-gray-500">Kiln</dt>
+                  <dd className="font-semibold text-gray-900">{firing.kilnName}</dd>
+                </div>
+                <div>
+                  <dt className="text-xs uppercase tracking-wide text-gray-500">Model</dt>
+                  <dd className="font-semibold text-gray-900">{firing.kilnModel}</dd>
+                </div>
+                <div>
+                  <dt className="text-xs uppercase tracking-wide text-gray-500">Location</dt>
+                  <dd className="font-semibold text-gray-900">{firing.location}</dd>
+                </div>
+                <div>
+                  <dt className="text-xs uppercase tracking-wide text-gray-500">Target temp</dt>
+                  <dd className="font-semibold text-gray-900">{firing.targetTemp ? `${firing.targetTemp}°F` : "—"}</dd>
+                </div>
+                <div>
+                  <dt className="text-xs uppercase tracking-wide text-gray-500">Status</dt>
+                  <dd className="font-semibold text-gray-900">{statusLabel}</dd>
+                </div>
+                <div>
+                  <dt className="text-xs uppercase tracking-wide text-gray-500">Firing type</dt>
+                  <dd className="font-semibold text-gray-900">{firing.firingType}</dd>
+                </div>
+              </dl>
+            </div>
+            {firing.status === "closed" && (
+              <button
+                type="button"
+                onClick={handleDeleteFiringFromHistory}
+                className="inline-flex items-center justify-center rounded-full border border-red-200 bg-red-50 px-4 py-2 text-sm font-semibold text-red-700 shadow-sm transition hover:border-red-300 hover:bg-red-100"
+              >
+                Delete from history
+              </button>
+            )}
           </div>
         </header>
 
