@@ -46,11 +46,7 @@ type Kiln = {
 };
 
 const KILNS_STORAGE_KEY = "kiln-admin-kilns";
-const defaultKilns: Kiln[] = [
-  { id: 1, nickname: "Studio Workhorse", type: "digital" },
-  { id: 2, nickname: "Manual Test Kiln", type: "manual", manualControl: "switches", switches: 3 },
-  { id: 3, nickname: "Glaze Trials", type: "manual", manualControl: "dial", dialPositions: ["Low", "Medium", "High"] },
-];
+const defaultKilns: Kiln[] = [];
 
 const mockFiring: Firing = {
   id: "1",
