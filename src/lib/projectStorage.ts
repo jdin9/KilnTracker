@@ -50,3 +50,16 @@ export const saveStoredProject = (project: StoredProject) => {
     console.error("Failed to persist project", error);
   }
 };
+
+export const deleteStoredProject = (projectId: string) => {
+  if (typeof window === "undefined") return;
+
+  const existing = readStorage();
+  const updated = existing.filter((entry) => entry.id !== projectId);
+
+  try {
+    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+  } catch (error) {
+    console.error("Failed to delete project", error);
+  }
+};

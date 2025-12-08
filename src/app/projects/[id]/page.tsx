@@ -2,13 +2,14 @@
 
 import React, { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, useRouter } from "next/navigation";
 
 import { formatDate } from "@/lib/dateFormat";
 import { coneChart, getConeTemperature } from "@/lib/coneReference";
 import { getActiveStudioColors, initialStudioColors } from "@/lib/studioColors";
 import {
   loadStoredProjects,
+  deleteStoredProject,
   saveStoredProject,
   StoredProject,
   type StoredProjectPhoto,
@@ -55,6 +56,7 @@ const collectProjectGlazes = (project: StoredProject) => {
 };
 
 export default function ProjectDetailPage({ params }: { params: { id: string } }) {
+  const router = useRouter();
   const [data, setData] = useState<StoredProject | null | "loading">("loading");
   const [activityType, setActivityType] = useState<"glaze" | "fire">("glaze");
   const [glazeColor, setGlazeColor] = useState("");
@@ -92,6 +94,19 @@ export default function ProjectDetailPage({ params }: { params: { id: string } }
 
     setData(null);
   }, [params.id, storedProjects]);
+
+  const handleDeleteProject = () => {
+    if (!data || data === "loading") return;
+
+    const confirmDelete = window.confirm("Delete this project and all of its steps?");
+    if (!confirmDelete) return;
+
+    if (params.id !== mockProject.id) {
+      deleteStoredProject(data.id);
+    }
+
+    router.push("/projects");
+  };
 
   const handleAddActivity = (event: React.FormEvent) => {
     event.preventDefault();
@@ -182,12 +197,21 @@ export default function ProjectDetailPage({ params }: { params: { id: string } }
             <h1 className="text-3xl font-bold text-gray-900">{data.title || "Untitled Project"}</h1>
             <p className="text-sm text-gray-600">Track clay, firings, and glaze passes from start to finish.</p>
           </div>
-          <Link
-            href="/projects"
-            className="inline-flex items-center gap-2 rounded-full border border-purple-200 bg-white px-4 py-2 text-sm font-semibold text-purple-800 shadow-sm transition hover:-translate-y-0.5 hover:border-purple-300 hover:shadow"
-          >
-            ← Back to projects
-          </Link>
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={handleDeleteProject}
+              className="inline-flex items-center gap-2 rounded-full border border-red-200 bg-white px-4 py-2 text-sm font-semibold text-red-700 shadow-sm transition hover:-translate-y-0.5 hover:border-red-300 hover:shadow"
+            >
+              Delete project
+            </button>
+            <Link
+              href="/projects"
+              className="inline-flex items-center gap-2 rounded-full border border-purple-200 bg-white px-4 py-2 text-sm font-semibold text-purple-800 shadow-sm transition hover:-translate-y-0.5 hover:border-purple-300 hover:shadow"
+            >
+              ← Back to projects
+            </Link>
+          </div>
         </div>
 
         <div className="grid gap-4 lg:grid-cols-[1.6fr,1fr]">
