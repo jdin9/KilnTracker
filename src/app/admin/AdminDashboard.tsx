@@ -405,19 +405,17 @@ export default function AdminDashboard({ currentUser }: { currentUser: SessionUs
           </div>
 
           <div className="overflow-hidden rounded-2xl border border-purple-100 bg-white shadow-sm">
-            <div className="grid grid-cols-6 bg-purple-50/60 px-4 py-3 text-xs font-semibold uppercase tracking-wide text-purple-800">
+            <div className="grid grid-cols-4 bg-purple-50/60 px-4 py-3 text-xs font-semibold uppercase tracking-wide text-purple-800">
               <span>Nickname</span>
               <span>Type</span>
               <span>Controls</span>
-              <span>Switches</span>
-              <span>Dial positions</span>
               <span className="text-right">Actions</span>
             </div>
             <ul className="divide-y divide-purple-100">
               {kilns.map((kiln) => (
                 <li
                   key={kiln.id}
-                  className="grid grid-cols-6 items-center px-4 py-3 text-sm text-gray-800"
+                  className="grid grid-cols-4 items-center px-4 py-3 text-sm text-gray-800"
                 >
                   <span className="font-semibold">{kiln.nickname}</span>
                   <span className="capitalize">{kiln.type}</span>
@@ -428,23 +426,6 @@ export default function AdminDashboard({ currentUser }: { currentUser: SessionUs
                         : "Dial"
                       : "Digital Panel"}
                   </span>
-                  <span className="text-sm text-gray-600">
-                    {kiln.type === "manual" && kiln.manualControl === "switches"
-                      ? `${kiln.switches ?? 0} switches`
-                      : "—"}
-                  </span>
-                  <div className="flex flex-wrap gap-1 text-xs text-gray-700">
-                    {kiln.type === "manual" && kiln.manualControl === "dial" && kiln.dialPositions?.length
-                      ? kiln.dialPositions.map((position, index) => (
-                          <span
-                            key={`${kiln.id}-position-${index}`}
-                            className="rounded-full bg-purple-50 px-2 py-0.5 font-semibold text-purple-800 ring-1 ring-purple-100"
-                          >
-                            {position}
-                          </span>
-                        ))
-                      : "—"}
-                  </div>
                   <div className="flex justify-end gap-2">
                     <button
                       type="button"
