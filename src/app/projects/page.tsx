@@ -8,6 +8,7 @@ import { coneChart } from "@/lib/coneReference";
 import { formatDate } from "@/lib/dateFormat";
 import { getActiveStudioColors, initialStudioColors } from "@/lib/studioColors";
 import { loadStoredProjects, StoredProject } from "@/lib/projectStorage";
+import { loadAdminClayBodies, loadAdminStudioColors } from "@/lib/adminStorage";
 
 const collectProjectGlazes = (project: StoredProject) => {
   const glazesFromSteps = (project.steps || [])
@@ -170,25 +171,25 @@ export default function ProjectsPage() {
   const [glazeDropdownOpen, setGlazeDropdownOpen] = useState(false);
   const [storedProjects, setStoredProjects] = useState<StoredProject[]>([]);
 
-  const clayBodyOptions = useMemo(() => initialClayBodies, []);
-  const activeGlazes = useMemo(
-    () => getActiveStudioColors(initialStudioColors),
-    []
+  const [clayBodyOptions, setClayBodyOptions] = useState(initialClayBodies);
+  const [activeGlazes, setActiveGlazes] = useState(
+    getActiveStudioColors(initialStudioColors)
   );
-  const inactiveStudioGlazes = useMemo(
-    () => initialStudioColors.filter((color) => color.retired),
-    []
+  const [inactiveStudioGlazes, setInactiveStudioGlazes] = useState(
+    initialStudioColors.filter((color) => color.retired)
   );
   const inactiveGlazeNames = useMemo(
-    () =>
-      new Set(
-        initialStudioColors.filter((color) => color.retired).map((color) => color.name)
-      ),
-    []
+    () => new Set(inactiveStudioGlazes.map((color) => color.name)),
+    [inactiveStudioGlazes]
   );
   const coneOptions = useMemo(() => coneChart, []);
 
   React.useEffect(() => {
+    const storedColors = loadAdminStudioColors(initialStudioColors);
+    setActiveGlazes(getActiveStudioColors(storedColors));
+    setInactiveStudioGlazes(storedColors.filter((color) => color.retired));
+    setClayBodyOptions(loadAdminClayBodies(initialClayBodies));
+
     const refreshStoredProjects = () => {
       setStoredProjects(loadStoredProjects());
     };
