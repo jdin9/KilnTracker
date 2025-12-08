@@ -101,13 +101,6 @@ type FiringImage = {
   projectTitle: string;
 };
 
-type FiringImage = {
-  id: string;
-  url: string;
-  projectId: string;
-  projectTitle: string;
-};
-
 const defaultFilters: Filters = {
   selectedGlazes: [],
   showFired: true,

@@ -65,10 +65,10 @@ async function fetchProjectDetail(ctx: Context, projectId: string, studioId: str
   }
 
   const coverPhoto = project.steps
-    .flatMap((s) => s.photos)
-    .find((p) => p.isCoverForProject === true);
+    .flatMap((s: any) => s.photos)
+    .find((p: any) => p.isCoverForProject === true);
 
-  const stepsWithDerived = project.steps.map((s) => enrichFiringStepWithDerivedData(s));
+  const stepsWithDerived = project.steps.map((s: any) => enrichFiringStepWithDerivedData(s as any));
 
   return { ...project, steps: stepsWithDerived, coverPhoto };
 }

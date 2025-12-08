@@ -7,7 +7,12 @@ import { notFound } from "next/navigation";
 import { formatDate } from "@/lib/dateFormat";
 import { coneChart, getConeTemperature } from "@/lib/coneReference";
 import { getActiveStudioColors, initialStudioColors } from "@/lib/studioColors";
-import { loadStoredProjects, saveStoredProject, StoredProject } from "@/lib/projectStorage";
+import {
+  loadStoredProjects,
+  saveStoredProject,
+  StoredProject,
+  type StoredProjectPhoto,
+} from "@/lib/projectStorage";
 
 // TODO: replace with trpc.project.detail.useQuery
 const mockProject = {
@@ -311,7 +316,7 @@ export default function ProjectDetailPage({ params }: { params: { id: string } }
 
                     {step.photos?.length ? (
                       <div className="mt-3 grid grid-cols-3 gap-2">
-                        {step.photos.map((photo) => (
+                        {step.photos.map((photo: StoredProjectPhoto) => (
                           // eslint-disable-next-line @next/next/no-img-element
                           <img
                             key={photo.id}

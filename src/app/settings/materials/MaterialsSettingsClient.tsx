@@ -23,8 +23,15 @@ export default function MaterialsPage() {
   const addClay = () => {
     setClayBodies((prev) => [
       ...prev,
-      { id: prev.length ? Math.max(...prev.map((clay) => clay.id)) + 1 : 1, name: clayForm.name },
+      {
+        id: prev.length ? Math.max(...prev.map((clay) => clay.id)) + 1 : 1,
+        name: clayForm.name,
+        bisqueTemp: clayForm.bisqueTemp ? Number(clayForm.bisqueTemp) : undefined,
+        notes: clayForm.notes || undefined,
+      },
     ]);
+
+    setClayForm({ name: "", bisqueTemp: "", notes: "" });
   };
 
   return (
