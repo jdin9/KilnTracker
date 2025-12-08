@@ -7,6 +7,7 @@ import { notFound, useRouter } from "next/navigation";
 import { formatDate } from "@/lib/dateFormat";
 import { coneChart, getConeTemperature } from "@/lib/coneReference";
 import { getActiveStudioColors, initialStudioColors } from "@/lib/studioColors";
+import { loadAdminStudioColors } from "@/lib/adminStorage";
 import {
   loadStoredProjects,
   deleteStoredProject,
@@ -37,7 +38,21 @@ export default function ProjectDetailPage({ params }: { params: { id: string } }
   const [photoInputKey, setPhotoInputKey] = useState(0);
 
   const storedProjects = useMemo(() => loadStoredProjects(), []);
-  const activeColors = useMemo(() => getActiveStudioColors(initialStudioColors), []);
+  const [studioColors, setStudioColors] = useState(initialStudioColors);
+  const activeColors = useMemo(() => getActiveStudioColors(studioColors), [studioColors]);
+
+  useEffect(() => {
+    const storedStudioColors = loadAdminStudioColors(initialStudioColors);
+    setStudioColors(storedStudioColors);
+
+    const handleStorageUpdate = () => {
+      setStudioColors(loadAdminStudioColors(initialStudioColors));
+    };
+
+    window.addEventListener("storage", handleStorageUpdate);
+
+    return () => window.removeEventListener("storage", handleStorageUpdate);
+  }, []);
 
   useEffect(() => {
     const storedMatch = storedProjects.find((project) => project.id === params.id);
