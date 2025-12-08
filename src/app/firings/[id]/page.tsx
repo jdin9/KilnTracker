@@ -64,88 +64,6 @@ const mockFiring: Firing = {
   startTime: "2024-05-25T08:00:00Z",
 };
 
-const defaultHistoryDetails: Record<string, { firing: Firing; activities: Activity[] }> = {
-  "11": {
-    firing: {
-      id: "11",
-      kilnName: "Big Manual Kiln",
-      kilnModel: "Skutt KM1227",
-      location: "Studio North",
-      firingType: "glaze",
-      status: "closed",
-      targetCone: "6",
-      targetTemp: 2232,
-      startTime: "2024-05-25T08:00:00Z",
-      endTime: "2024-05-25T22:10:00Z",
-      maxTemp: 2225,
-      pieces: [
-        { name: "Mugs (8)", notes: "Shino outside" },
-        { name: "Dinner plates (4)", notes: "Celadon" },
-      ],
-      notes: "Smooth cone 6 glaze with long soak at the end.",
-    },
-    activities: [
-      { id: "a1", timestamp: "2024-05-25T08:00:00Z", type: "note", note: "Loaded and candling" },
-      { id: "a2", timestamp: "2024-05-25T10:00:00Z", type: "dial", dialPosition: "low", note: "Dial to low" },
-      { id: "a3", timestamp: "2024-05-25T13:00:00Z", type: "switch", switchName: "Top", switchState: "on" },
-      { id: "a4", timestamp: "2024-05-25T17:00:00Z", type: "temp", pyrometerTemp: 1900, note: "On schedule" },
-      { id: "a5", timestamp: "2024-05-25T21:45:00Z", type: "shutdown", pyrometerTemp: 2225, note: "Kiln off" },
-    ],
-  },
-  "12": {
-    firing: {
-      id: "12",
-      kilnName: "Small Electric Kiln",
-      kilnModel: "Olympic 1823E",
-      location: "Studio Annex",
-      firingType: "bisque",
-      status: "closed",
-      targetCone: "04",
-      targetTemp: 1940,
-      startTime: "2024-05-10T07:30:00Z",
-      endTime: "2024-05-10T21:45:00Z",
-      maxTemp: 1935,
-      pieces: [
-        { name: "Test tiles (12)" },
-        { name: "Cups (6)", notes: "Handle stress test" },
-      ],
-      notes: "Held for 20 minutes at top temp; even firing.",
-    },
-    activities: [
-      { id: "b1", timestamp: "2024-05-10T07:30:00Z", type: "note", note: "Bisque load" },
-      { id: "b2", timestamp: "2024-05-10T12:00:00Z", type: "temp", pyrometerTemp: 1600, note: "On track" },
-      { id: "b3", timestamp: "2024-05-10T18:30:00Z", type: "switch", switchName: "Bottom", switchState: "medium" },
-      { id: "b4", timestamp: "2024-05-10T21:45:00Z", type: "shutdown", pyrometerTemp: 1935, note: "Power off" },
-    ],
-  },
-  "13": {
-    firing: {
-      id: "13",
-      kilnName: "Test Kiln",
-      kilnModel: "Manual Dial Kiln",
-      location: "Studio Backroom",
-      firingType: "glaze",
-      status: "closed",
-      targetCone: "06",
-      targetTemp: 1830,
-      startTime: "2024-04-28T07:00:00Z",
-      endTime: "2024-04-28T13:20:00Z",
-      maxTemp: 1810,
-      pieces: [
-        { name: "Bowls (3)" },
-        { name: "Tiles (5)", notes: "Ran cold; glaze pinholes" },
-      ],
-      notes: "Stopped early after uneven temp rise.",
-    },
-    activities: [
-      { id: "c1", timestamp: "2024-04-28T07:00:00Z", type: "note", note: "Test firing" },
-      { id: "c2", timestamp: "2024-04-28T09:00:00Z", type: "temp", pyrometerTemp: 1500 },
-      { id: "c3", timestamp: "2024-04-28T11:30:00Z", type: "dial", dialPosition: "high", note: "Tried to push" },
-      { id: "c4", timestamp: "2024-04-28T13:20:00Z", type: "shutdown", pyrometerTemp: 1810, note: "Aborted" },
-    ],
-  },
-};
-
 const OPEN_DETAIL_KEY = "kiln-open-firing-details";
 const HISTORY_DETAIL_KEY = "kiln-firing-history-details";
 
@@ -280,8 +198,7 @@ export default function FiringDetailPage({ params }: { params: { id: string } })
   useEffect(() => {
     const fromOpen = getStoredFiring(params.id);
     const fromHistory = getStoredHistoryFiring(params.id);
-    const fallbackHistory = defaultHistoryDetails[params.id];
-    const resolvedFiring = fromOpen ?? fromHistory ?? fallbackHistory?.firing ?? (params.id === mockFiring.id ? mockFiring : null);
+    const resolvedFiring = fromOpen ?? fromHistory ?? (params.id === mockFiring.id ? mockFiring : null);
     setFiring(resolvedFiring);
     setLoading(false);
 
@@ -312,10 +229,6 @@ export default function FiringDetailPage({ params }: { params: { id: string } })
           console.error("Unable to parse stored firing events", error);
         }
       }
-    }
-
-    if (fallbackHistory?.activities) {
-      setActivities(fallbackHistory.activities);
     }
   }, [params.id]);
 
