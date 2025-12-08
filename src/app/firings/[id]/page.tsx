@@ -268,6 +268,19 @@ export default function FiringDetailPage({ params }: { params: { id: string } })
     [activities],
   );
 
+  const resetForm = () => {
+    setForm((prev) => ({
+      ...prev,
+      note: "",
+      pyrometerTemp: "",
+      timestamp: nowLocal(),
+      switchName: "",
+      switchState: "on",
+      shutdown: false,
+      closeFiring: false,
+    }));
+  };
+
   if (!firing && !loading) return notFound();
   if (loading) {
     return (
@@ -296,11 +309,6 @@ export default function FiringDetailPage({ params }: { params: { id: string } })
               : form.pyrometerTemp
                 ? "temp"
                 : "note";
-
-    if (inferredType === "shutdown" && !form.pyrometerTemp) {
-      alert("Temperature is required when shutting down the kiln.");
-      return;
-    }
 
     if (form.tempOnly && !form.pyrometerTemp) {
       alert("Temperature is required when logging a temp-only reading.");
@@ -388,20 +396,31 @@ export default function FiringDetailPage({ params }: { params: { id: string } })
       }
     }
 
-    setForm((prev) => ({
-      ...prev,
-      note: "",
-      pyrometerTemp: "",
-      timestamp: nowLocal(),
-      switchName: "",
-      switchState: "on",
-      shutdown: false,
-      closeFiring: false,
-    }));
+    resetForm();
   };
 
   const handleDelete = (id: string) => {
     setActivities((prev) => prev.filter((activity) => activity.id !== id));
+  };
+
+  const handleLogKilnOff = () => {
+    if (!firing) {
+      alert("Unable to record shutdown because the firing record is missing.");
+      return;
+    }
+
+    const activity: Activity = {
+      id: `act-${Date.now()}`,
+      timestamp: new Date(form.timestamp).toISOString(),
+      type: "shutdown",
+      note:
+        form.note ||
+        (!form.pyrometerTemp ? "Kiln observed off; temperature not recorded." : "Kiln observed off."),
+      pyrometerTemp: form.pyrometerTemp ? Number(form.pyrometerTemp) : undefined,
+    };
+
+    setActivities((prev) => [...prev, activity]);
+    resetForm();
   };
 
   const handleDeleteFiringFromHistory = () => {
@@ -615,8 +634,22 @@ export default function FiringDetailPage({ params }: { params: { id: string } })
                   className="w-full rounded border px-2 py-1"
                   value={form.pyrometerTemp}
                   onChange={(e) => setForm({ ...form, pyrometerTemp: e.target.value })}
-                  placeholder="Optional; required when turning kiln off"
+                  placeholder="Optional temperature reading"
                 />
+              </div>
+
+              <div className="space-y-2 lg:col-span-2">
+                <button
+                  type="button"
+                  onClick={handleLogKilnOff}
+                  className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-orange-500 px-4 py-2 text-sm font-semibold text-white shadow hover:bg-orange-600"
+                >
+                  Log kiln was off
+                </button>
+                <p className="text-xs text-orange-800">
+                  Records a shutdown entry without requiring a temperature. If you add a temp above, it will be saved with the
+                  note.
+                </p>
               </div>
 
               <div className="flex items-center gap-2 lg:col-span-3">
@@ -651,7 +684,7 @@ export default function FiringDetailPage({ params }: { params: { id: string } })
                       setForm({ ...form, shutdown: e.target.checked, closeFiring: e.target.checked ? false : form.closeFiring })
                     }
                   />
-                  Mark kiln shut down (logs end temperature)
+                  Mark kiln shut down (logs optional end temperature)
                 </label>
                 <label className="inline-flex items-center gap-2 text-sm font-medium text-gray-700">
                   <input
