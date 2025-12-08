@@ -32,27 +32,7 @@ type Kiln = {
 
 const KILN_STORAGE_KEY = "kiln-admin-kilns";
 
-const initialKilns: Kiln[] = [
-  {
-    id: 1,
-    nickname: "Studio Workhorse",
-    type: "digital",
-  },
-  {
-    id: 2,
-    nickname: "Manual Test Kiln",
-    type: "manual",
-    manualControl: "switches",
-    switches: 3,
-  },
-  {
-    id: 3,
-    nickname: "Glaze Trials",
-    type: "manual",
-    manualControl: "dial",
-    dialPositions: ["Low", "Medium", "High"],
-  },
-];
+const initialKilns: Kiln[] = [];
 
 export default function AdminDashboard({ currentUser }: { currentUser: SessionUser }) {
   const [activeTab, setActiveTab] = useState<string>("users");

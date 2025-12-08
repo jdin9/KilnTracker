@@ -30,11 +30,7 @@ type FiringFormModalProps = {
 
 type KilnOption = { id: string; name: string; model: string; location: string };
 
-const defaultKilnOptions: KilnOption[] = [
-  { id: "1", name: "Studio Workhorse", model: "Digital controller", location: "Studio" },
-  { id: "2", name: "Manual Test Kiln", model: "Manual switches kiln", location: "Studio" },
-  { id: "3", name: "Glaze Trials", model: "Manual dial kiln", location: "Studio" },
-];
+const defaultKilnOptions: KilnOption[] = [];
 
 const KILN_STORAGE_KEY = "kiln-definitions";
 
