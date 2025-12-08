@@ -1,4 +1,4 @@
-import { protectedProcedure, rateLimitedAdminProcedure, router } from '../trpc';
+import { adminProcedure, protectedProcedure, router } from '../trpc';
 import { getCurrentUser } from '../../auth/getCurrentUser';
 import {
   completeFiringInputSchema,
@@ -31,7 +31,7 @@ export const firingRouter = router({
     return completeFiring(ctx, user, input);
   }),
 
-  delete: rateLimitedAdminProcedure.input(deleteFiringInputSchema).mutation(async ({ ctx, input }) => {
+  delete: adminProcedure.input(deleteFiringInputSchema).mutation(async ({ ctx, input }) => {
     const user = getCurrentUser(ctx);
     return deleteFiring(ctx, user, input.firingId);
   }),

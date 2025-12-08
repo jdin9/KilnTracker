@@ -1,14 +1,9 @@
-import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 
 import { setSessionUser } from "@/server/auth/session";
-import { authConfig } from "@/server/config/env";
-import { consumeRateLimit } from "@/server/utils/rateLimiter";
 
-const AUTH_RATE_LIMIT = {
-  limit: 5,
-  windowMs: 60_000,
-};
+const ADMIN_USERNAME = "DinAdmin";
+const ADMIN_PASSWORD = "Qwerty!123";
 
 const defaultAdminUser = {
   id: "admin-1",
@@ -19,20 +14,11 @@ const defaultAdminUser = {
 };
 
 function isValidCredentials(username: string, password: string) {
-  return username === authConfig.adminUsername && password === authConfig.adminPassword;
+  return username === ADMIN_USERNAME && password === ADMIN_PASSWORD;
 }
 
 async function loginAction(formData: FormData) {
   "use server";
-
-  const forwardedFor = headers().get("x-forwarded-for") ?? "unknown";
-  const clientIp = forwardedFor.split(",")[0]?.trim() || "unknown";
-
-  const rateLimitResult = consumeRateLimit(`login:${clientIp}`, AUTH_RATE_LIMIT);
-
-  if (!rateLimitResult.success) {
-    redirect("/login?error=rate_limit");
-  }
 
   const username = String(formData.get("username") ?? "").trim();
   const password = String(formData.get("password") ?? "");
@@ -45,10 +31,10 @@ async function loginAction(formData: FormData) {
   redirect("/admin");
 }
 
-function ErrorBanner({ message }: { message: string }) {
+function ErrorBanner() {
   return (
     <div className="rounded-2xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-700">
-      {message}
+      Incorrect username or password. Please try again.
     </div>
   );
 }
@@ -58,9 +44,7 @@ export default function LoginPage({
 }: {
   searchParams?: Record<string, string | string[] | undefined>;
 }) {
-  const error = searchParams?.error;
-  const hasError = error === "invalid";
-  const rateLimited = error === "rate_limit";
+  const hasError = searchParams?.error === "invalid";
 
   return (
     <main className="flex min-h-screen items-center justify-center bg-gradient-to-br from-purple-50 via-white to-indigo-100 px-6 py-10">
@@ -71,10 +55,7 @@ export default function LoginPage({
           <p className="text-sm text-gray-600">Use your administrator credentials to continue.</p>
         </div>
 
-        {hasError && <ErrorBanner message="Incorrect username or password. Please try again." />}
-        {rateLimited && (
-          <ErrorBanner message="Too many sign-in attempts. Please wait a minute before trying again." />
-        )}
+        {hasError && <ErrorBanner />}
 
         <form action={loginAction} className="space-y-4">
           <div className="space-y-2">
@@ -115,7 +96,10 @@ export default function LoginPage({
           </button>
         </form>
 
-        <p className="text-center text-xs text-gray-500">Use the administrator credentials provided to you.</p>
+        <p className="text-center text-xs text-gray-500">
+          Hint: Username <span className="font-semibold text-gray-800">{ADMIN_USERNAME}</span> / Password
+          <span className="font-semibold text-gray-800"> {ADMIN_PASSWORD}</span>
+        </p>
       </div>
     </main>
   );
