@@ -59,6 +59,7 @@ export default function AdminDashboard({ currentUser }: { currentUser: SessionUs
   const [studioDetails, setStudioDetails] = useState(DEFAULT_STUDIO);
   const [studioForm, setStudioForm] = useState(studioDetails);
   const [users, setUsers] = useState<User[]>(initialUsers);
+  const [newUserForm, setNewUserForm] = useState({ firstName: "", lastName: "" });
   const [kilns, setKilns] = useState<Kiln[]>(initialKilns);
   const [kilnForm, setKilnForm] = useState<Omit<Kiln, "id">>({
     nickname: "",
@@ -164,6 +165,21 @@ export default function AdminDashboard({ currentUser }: { currentUser: SessionUs
     setUsers((prev) => prev.filter((user) => user.id !== userId));
   }, []);
 
+  const handleUserAdd = useCallback(
+    (event: FormEvent<HTMLFormElement>) => {
+      event.preventDefault();
+      const firstName = newUserForm.firstName.trim();
+      const lastName = newUserForm.lastName.trim();
+
+      if (!firstName || !lastName) return;
+
+      const nextId = users.length ? Math.max(...users.map((user) => user.id)) + 1 : 1;
+      setUsers((prev) => [...prev, { id: nextId, firstName, lastName }]);
+      setNewUserForm({ firstName: "", lastName: "" });
+    },
+    [newUserForm.firstName, newUserForm.lastName, users]
+  );
+
   const handleKilnDelete = useCallback(
     (kilnId: number) => {
       setKilns((prev) => prev.filter((kiln) => kiln.id !== kilnId));
@@ -191,20 +207,16 @@ export default function AdminDashboard({ currentUser }: { currentUser: SessionUs
           </div>
 
           <div className="overflow-hidden rounded-2xl border border-purple-100 bg-white shadow-sm">
-            <div className="grid grid-cols-5 bg-purple-50/60 px-4 py-3 text-xs font-semibold uppercase tracking-wide text-purple-800">
+            <div className="grid grid-cols-3 bg-purple-50/60 px-4 py-3 text-xs font-semibold uppercase tracking-wide text-purple-800">
               <span>First Name</span>
               <span>Last Name</span>
-              <span>Username</span>
-              <span>Password</span>
               <span className="text-right">Actions</span>
             </div>
             <ul className="divide-y divide-purple-100">
               {users.map((user) => (
-                <li key={user.id} className="grid grid-cols-5 items-center px-4 py-3 text-sm text-gray-800">
+                <li key={user.id} className="grid grid-cols-3 items-center px-4 py-3 text-sm text-gray-800">
                   <span className="font-semibold">{user.firstName}</span>
                   <span>{user.lastName}</span>
-                  <span className="font-mono text-xs text-gray-600">{user.username}</span>
-                  <span className="font-mono text-xs text-gray-600">•••••••</span>
                   <div className="flex justify-end">
                     <button
                       type="button"
@@ -220,33 +232,78 @@ export default function AdminDashboard({ currentUser }: { currentUser: SessionUs
           </div>
         </div>
 
-        <div className="rounded-3xl border border-purple-100 bg-purple-50 p-6 shadow-inner">
-          <h3 className="text-lg font-semibold text-gray-900">Self-serve access</h3>
-          <p className="mt-1 text-sm text-gray-600">
-            New users can register themselves from the Login / Sign Up page. Share your studio name
-            and password so they can verify membership during registration.
-          </p>
-          <div className="mt-4 space-y-2 text-sm text-gray-700">
-            <p className="font-semibold text-gray-900">Studio details</p>
-            <div className="rounded-2xl bg-white p-4 shadow-inner ring-1 ring-purple-100">
-              <div className="flex items-center justify-between text-xs font-semibold uppercase tracking-wide text-purple-700">
-                <span>Studio</span>
-                <span>Password</span>
-              </div>
-              <div className="mt-2 grid grid-cols-2 items-center gap-2 text-sm text-gray-900">
-                <span>{studioDetails.name}</span>
-                <span className="font-mono text-xs text-gray-600">{studioDetails.password}</span>
-              </div>
-            </div>
-            <p className="text-xs text-gray-600">
-              Users will need these values to sign up; you can update them in the Studio tab if
-              anything changes.
+        <div className="space-y-4">
+          <div className="rounded-3xl border border-purple-100 bg-purple-50 p-6 shadow-inner">
+            <h3 className="text-lg font-semibold text-gray-900">Add a user manually</h3>
+            <p className="mt-1 text-sm text-gray-600">
+              Enter a first and last name to record team members who should appear in drop-downs.
             </p>
+            <form className="mt-4 space-y-3" onSubmit={handleUserAdd}>
+              <div className="space-y-1">
+                <label className="text-sm font-semibold text-gray-800" htmlFor="new-first-name">
+                  First name
+                </label>
+                <input
+                  id="new-first-name"
+                  name="new-first-name"
+                  className="w-full rounded-xl border border-purple-200 bg-white px-3 py-2 text-sm shadow-inner focus:border-purple-400 focus:outline-none"
+                  placeholder="e.g. Alex"
+                  value={newUserForm.firstName}
+                  onChange={(event) => setNewUserForm((prev) => ({ ...prev, firstName: event.target.value }))}
+                  required
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="text-sm font-semibold text-gray-800" htmlFor="new-last-name">
+                  Last name
+                </label>
+                <input
+                  id="new-last-name"
+                  name="new-last-name"
+                  className="w-full rounded-xl border border-purple-200 bg-white px-3 py-2 text-sm shadow-inner focus:border-purple-400 focus:outline-none"
+                  placeholder="e.g. Kim"
+                  value={newUserForm.lastName}
+                  onChange={(event) => setNewUserForm((prev) => ({ ...prev, lastName: event.target.value }))}
+                  required
+                />
+              </div>
+              <button
+                type="submit"
+                className="w-full rounded-full bg-purple-600 px-4 py-2 text-sm font-semibold text-white shadow-md transition hover:bg-purple-700"
+              >
+                Add user
+              </button>
+            </form>
+          </div>
+
+          <div className="rounded-3xl border border-purple-100 bg-purple-50 p-6 shadow-inner">
+            <h3 className="text-lg font-semibold text-gray-900">Self-serve access</h3>
+            <p className="mt-1 text-sm text-gray-600">
+              New users can register themselves from the Login / Sign Up page. Share your studio name
+              and password so they can verify membership during registration.
+            </p>
+            <div className="mt-4 space-y-2 text-sm text-gray-700">
+              <p className="font-semibold text-gray-900">Studio details</p>
+              <div className="rounded-2xl bg-white p-4 shadow-inner ring-1 ring-purple-100">
+                <div className="flex items-center justify-between text-xs font-semibold uppercase tracking-wide text-purple-700">
+                  <span>Studio</span>
+                  <span>Password</span>
+                </div>
+                <div className="mt-2 grid grid-cols-2 items-center gap-2 text-sm text-gray-900">
+                  <span>{studioDetails.name}</span>
+                  <span className="font-mono text-xs text-gray-600">{studioDetails.password}</span>
+                </div>
+              </div>
+              <p className="text-xs text-gray-600">
+                Users will need these values to sign up; you can update them in the Studio tab if
+                anything changes.
+              </p>
+            </div>
           </div>
         </div>
       </div>
     ),
-    [studioDetails, users, handleUserDelete]
+    [studioDetails, users, handleUserDelete, handleUserAdd, newUserForm]
   );
 
   const studioTabContent = useMemo(
