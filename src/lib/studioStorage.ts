@@ -63,6 +63,10 @@ export function getClientStudioPassword(): string {
   return DEFAULT_STUDIO_PASSWORD;
 }
 
+export function getSiteAccessCode() {
+  return readCookie(SITE_ACCESS_COOKIE);
+}
+
 export function setSiteAccessCookie(code: string) {
   if (typeof document === "undefined") return;
   document.cookie = `${SITE_ACCESS_COOKIE}=${encodeURIComponent(code)}; path=/`;
