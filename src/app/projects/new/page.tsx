@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -9,6 +9,7 @@ import { initialClayBodies } from "@/lib/clayBodies";
 import { coneChart } from "@/lib/coneReference";
 import { initialUsers } from "@/lib/users";
 import { saveStoredProject } from "@/lib/projectStorage";
+import { loadAdminClayBodies, loadAdminUsers } from "@/lib/adminStorage";
 
 // TODO: replace with trpc.project.create.useMutation
 const useCreateProject = () => ({
@@ -30,12 +31,21 @@ export default function NewProjectPage() {
   });
   const [initialPhotos, setInitialPhotos] = useState<{ name: string; url: string }[]>([]);
 
-  const clayBodyOptions = useMemo(() => initialClayBodies, []);
+  const [clayBodyOptions, setClayBodyOptions] = useState(initialClayBodies);
   const bisqueConeOptions = useMemo(() => coneChart, []);
-  const makerOptions = useMemo(
-    () => initialUsers.map((user) => ({ ...user, fullName: `${user.firstName} ${user.lastName}` })),
-    []
+  const [makerOptions, setMakerOptions] = useState(
+    initialUsers.map((user) => ({ ...user, fullName: `${user.firstName} ${user.lastName}` }))
   );
+
+  useEffect(() => {
+    setClayBodyOptions(loadAdminClayBodies(initialClayBodies));
+    setMakerOptions(
+      loadAdminUsers(initialUsers).map((user) => ({
+        ...user,
+        fullName: `${user.firstName} ${user.lastName}`,
+      }))
+    );
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

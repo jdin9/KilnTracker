@@ -8,6 +8,14 @@ import type { SessionUser } from "@/server/auth/types";
 import { coneChart } from "@/lib/coneReference";
 import { ClayBody, initialClayBodies } from "@/lib/clayBodies";
 import { StudioColor, initialStudioColors } from "@/lib/studioColors";
+import {
+  loadAdminClayBodies,
+  loadAdminStudioColors,
+  loadAdminUsers,
+  persistAdminClayBodies,
+  persistAdminStudioColors,
+  persistAdminUsers,
+} from "@/lib/adminStorage";
 import { DEFAULT_STUDIO, ensureStudioPasswordCookie, getClientStudioDetails, persistStudioDetails } from "@/lib/studioStorage";
 import { User, initialUsers } from "@/lib/users";
 
@@ -56,6 +64,29 @@ export default function AdminDashboard({ currentUser }: { currentUser: SessionUs
   });
   const [clayBodies, setClayBodies] = useState<ClayBody[]>(initialClayBodies);
   const [clayBodyForm, setClayBodyForm] = useState<string>("");
+  const [adminDataLoaded, setAdminDataLoaded] = useState(false);
+
+  useEffect(() => {
+    setUsers(loadAdminUsers(initialUsers));
+    setColors(loadAdminStudioColors(initialStudioColors));
+    setClayBodies(loadAdminClayBodies(initialClayBodies));
+    setAdminDataLoaded(true);
+  }, []);
+
+  useEffect(() => {
+    if (!adminDataLoaded) return;
+    persistAdminUsers(users);
+  }, [users, adminDataLoaded]);
+
+  useEffect(() => {
+    if (!adminDataLoaded) return;
+    persistAdminStudioColors(colors);
+  }, [colors, adminDataLoaded]);
+
+  useEffect(() => {
+    if (!adminDataLoaded) return;
+    persistAdminClayBodies(clayBodies);
+  }, [clayBodies, adminDataLoaded]);
 
   useEffect(() => {
     const storedStudio = getClientStudioDetails();

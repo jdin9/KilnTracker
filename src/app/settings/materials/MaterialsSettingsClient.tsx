@@ -1,8 +1,9 @@
 'use client';
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 
 import { initialClayBodies } from "@/lib/clayBodies";
+import { loadAdminClayBodies } from "@/lib/adminStorage";
 
 // TODO: replace with trpc.glazes.list and trpc.clayBodies.list
 const initialGlazes = [
@@ -15,6 +16,10 @@ export default function MaterialsPage() {
   const [clayBodies, setClayBodies] = useState(initialClayBodies);
   const [glazeForm, setGlazeForm] = useState({ name: "", brand: "", color: "", coneRange: "", notes: "" });
   const [clayForm, setClayForm] = useState({ name: "", bisqueTemp: "", notes: "" });
+
+  useEffect(() => {
+    setClayBodies(loadAdminClayBodies(initialClayBodies));
+  }, []);
 
   const addGlaze = () => {
     setGlazes((prev) => [...prev, { id: `g${prev.length + 1}`, name: glazeForm.name, brand: glazeForm.brand }]);
