@@ -160,6 +160,20 @@ export default function AdminDashboard({ currentUser }: { currentUser: SessionUs
     });
   }, []);
 
+  const handleUserDelete = useCallback((userId: number) => {
+    setUsers((prev) => prev.filter((user) => user.id !== userId));
+  }, []);
+
+  const handleKilnDelete = useCallback(
+    (kilnId: number) => {
+      setKilns((prev) => prev.filter((kiln) => kiln.id !== kilnId));
+      if (editingKilnId === kilnId) {
+        resetKilnForm();
+      }
+    },
+    [editingKilnId, resetKilnForm]
+  );
+
   const usersContent = useMemo(
     () => (
       <div className="grid gap-8 lg:grid-cols-3">
@@ -177,19 +191,29 @@ export default function AdminDashboard({ currentUser }: { currentUser: SessionUs
           </div>
 
           <div className="overflow-hidden rounded-2xl border border-purple-100 bg-white shadow-sm">
-            <div className="grid grid-cols-4 bg-purple-50/60 px-4 py-3 text-xs font-semibold uppercase tracking-wide text-purple-800">
+            <div className="grid grid-cols-5 bg-purple-50/60 px-4 py-3 text-xs font-semibold uppercase tracking-wide text-purple-800">
               <span>First Name</span>
               <span>Last Name</span>
               <span>Username</span>
               <span>Password</span>
+              <span className="text-right">Actions</span>
             </div>
             <ul className="divide-y divide-purple-100">
               {users.map((user) => (
-                <li key={user.id} className="grid grid-cols-4 items-center px-4 py-3 text-sm text-gray-800">
+                <li key={user.id} className="grid grid-cols-5 items-center px-4 py-3 text-sm text-gray-800">
                   <span className="font-semibold">{user.firstName}</span>
                   <span>{user.lastName}</span>
                   <span className="font-mono text-xs text-gray-600">{user.username}</span>
                   <span className="font-mono text-xs text-gray-600">•••••••</span>
+                  <div className="flex justify-end">
+                    <button
+                      type="button"
+                      onClick={() => handleUserDelete(user.id)}
+                      className="rounded-full border border-red-100 bg-red-50 px-3 py-1 text-xs font-semibold text-red-700 transition hover:bg-red-100"
+                    >
+                      Delete
+                    </button>
+                  </div>
                 </li>
               ))}
             </ul>
@@ -222,7 +246,7 @@ export default function AdminDashboard({ currentUser }: { currentUser: SessionUs
         </div>
       </div>
     ),
-    [studioDetails, users]
+    [studioDetails, users, handleUserDelete]
   );
 
   const studioTabContent = useMemo(
@@ -391,6 +415,13 @@ export default function AdminDashboard({ currentUser }: { currentUser: SessionUs
                       className="rounded-full border border-purple-200 px-3 py-1 text-xs font-semibold text-purple-700 transition hover:bg-purple-50"
                     >
                       Edit
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleKilnDelete(kiln.id)}
+                      className="rounded-full border border-red-100 bg-red-50 px-3 py-1 text-xs font-semibold text-red-700 transition hover:bg-red-100"
+                    >
+                      Delete
                     </button>
                   </div>
                 </li>
@@ -646,7 +677,15 @@ export default function AdminDashboard({ currentUser }: { currentUser: SessionUs
         </div>
       </div>
     ),
-    [kilns, kilnForm, editingKilnId, handleKilnSubmit, startKilnEdit, resetKilnForm]
+    [
+      kilns,
+      kilnForm,
+      editingKilnId,
+      handleKilnSubmit,
+      startKilnEdit,
+      resetKilnForm,
+      handleKilnDelete,
+    ]
   );
 
   const potteryContent = (
