@@ -42,16 +42,25 @@ export default function ProjectDetailPage({ params }: { params: { id: string } }
   const activeColors = useMemo(() => getActiveStudioColors(studioColors), [studioColors]);
 
   useEffect(() => {
-    const storedStudioColors = loadAdminStudioColors(initialStudioColors);
-    setStudioColors(storedStudioColors);
+    let isMounted = true;
+
+    const loadStudioColors = async () => {
+      const storedStudioColors = await loadAdminStudioColors(initialStudioColors);
+      if (isMounted) setStudioColors(storedStudioColors);
+    };
+
+    void loadStudioColors();
 
     const handleStorageUpdate = () => {
-      setStudioColors(loadAdminStudioColors(initialStudioColors));
+      void loadStudioColors();
     };
 
     window.addEventListener("storage", handleStorageUpdate);
 
-    return () => window.removeEventListener("storage", handleStorageUpdate);
+    return () => {
+      isMounted = false;
+      window.removeEventListener("storage", handleStorageUpdate);
+    };
   }, []);
 
   useEffect(() => {

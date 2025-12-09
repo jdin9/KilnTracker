@@ -10,9 +10,11 @@ import { ClayBody, initialClayBodies } from "@/lib/clayBodies";
 import { StudioColor, initialStudioColors } from "@/lib/studioColors";
 import {
   loadAdminClayBodies,
+  loadAdminKilns,
   loadAdminStudioColors,
   loadAdminUsers,
   persistAdminClayBodies,
+  persistAdminKilns,
   persistAdminStudioColors,
   persistAdminUsers,
 } from "@/lib/adminStorage";
@@ -37,8 +39,6 @@ type Kiln = {
   switches?: number;
   dialPositions?: string[];
 };
-
-const KILN_STORAGE_KEY = "kiln-admin-kilns";
 
 const initialKilns: Kiln[] = [];
 
@@ -67,25 +67,30 @@ export default function AdminDashboard({ currentUser }: { currentUser: SessionUs
   const [adminDataLoaded, setAdminDataLoaded] = useState(false);
 
   useEffect(() => {
-    setUsers(loadAdminUsers(initialUsers));
-    setColors(loadAdminStudioColors(initialStudioColors));
-    setClayBodies(loadAdminClayBodies(initialClayBodies));
-    setAdminDataLoaded(true);
+    const loadAdminData = async () => {
+      setUsers(await loadAdminUsers(initialUsers));
+      setColors(await loadAdminStudioColors(initialStudioColors));
+      setClayBodies(await loadAdminClayBodies(initialClayBodies));
+      setKilns(await loadAdminKilns(initialKilns));
+      setAdminDataLoaded(true);
+    };
+
+    void loadAdminData();
   }, []);
 
   useEffect(() => {
     if (!adminDataLoaded) return;
-    persistAdminUsers(users);
+    void persistAdminUsers(users);
   }, [users, adminDataLoaded]);
 
   useEffect(() => {
     if (!adminDataLoaded) return;
-    persistAdminStudioColors(colors);
+    void persistAdminStudioColors(colors);
   }, [colors, adminDataLoaded]);
 
   useEffect(() => {
     if (!adminDataLoaded) return;
-    persistAdminClayBodies(clayBodies);
+    void persistAdminClayBodies(clayBodies);
   }, [clayBodies, adminDataLoaded]);
 
   useEffect(() => {
@@ -96,24 +101,9 @@ export default function AdminDashboard({ currentUser }: { currentUser: SessionUs
   }, []);
 
   useEffect(() => {
-    if (typeof window === "undefined") return;
-    const savedKilns = window.localStorage.getItem(KILN_STORAGE_KEY);
-    if (savedKilns) {
-      try {
-        const parsed = JSON.parse(savedKilns);
-        if (Array.isArray(parsed) && parsed.length) {
-          setKilns(parsed);
-        }
-      } catch (error) {
-        console.error("Failed to parse stored kiln definitions", error);
-      }
-    }
-  }, []);
-
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    window.localStorage.setItem(KILN_STORAGE_KEY, JSON.stringify(kilns));
-  }, [kilns]);
+    if (!adminDataLoaded) return;
+    void persistAdminKilns(kilns);
+  }, [kilns, adminDataLoaded]);
 
   const resetKilnForm = useCallback(() => {
     setKilnForm({
