@@ -3,6 +3,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 
+import { ADMIN_KILNS_KEY, loadAdminKilns } from "@/lib/adminStorage";
 import { getConeTemperature } from "@/lib/coneReference";
 
 // TODO: replace with real tRPC mutation (e.g., trpc.firing.create.useMutation)
@@ -29,10 +30,15 @@ type FiringFormModalProps = {
 };
 
 type KilnOption = { id: string; name: string; model: string; location: string };
+type AdminKiln = {
+  id?: number;
+  nickname?: string;
+  type?: "manual" | "digital";
+  manualControl?: "switches" | "dial";
+  location?: string;
+};
 
 const defaultKilnOptions: KilnOption[] = [];
-
-const KILN_STORAGE_KEY = "kiln-definitions";
 
 const coneOptions = ["022", "018", "06", "05", "04", "03", "02", "01", "1", "2", "4", "5", "6", "8", "10"];
 
@@ -78,29 +84,42 @@ export function FiringFormModal({ open, onClose, mode = "create", initialData }:
   const [kilnOptions, setKilnOptions] = useState<KilnOption[]>(defaultKilnOptions);
 
   useEffect(() => {
-    if (typeof window === "undefined") return;
-    const storedKilns = window.localStorage.getItem(KILN_STORAGE_KEY);
-    if (!storedKilns) return;
+    let isMounted = true;
 
-    try {
-      const parsed = JSON.parse(storedKilns);
-      if (Array.isArray(parsed) && parsed.length) {
-        const mapped = parsed.map((kiln: any, index: number): KilnOption => ({
-          id: kiln.id ? kiln.id.toString() : `kiln-${index + 1}`,
-          name: kiln.nickname ?? "Unnamed kiln",
-          model:
-            kiln.type === "digital"
-              ? "Digital controller"
-              : kiln.manualControl === "switches"
-                ? "Manual switches kiln"
-                : "Manual dial kiln",
-          location: "Studio",
-        }));
-        setKilnOptions(mapped);
-      }
-    } catch (error) {
-      console.error("Failed to read kiln definitions", error);
-    }
+    const mapKilnsToOptions = (kilns: AdminKiln[]): KilnOption[] =>
+      kilns.map((kiln, index) => ({
+        id: kiln.id ? kiln.id.toString() : `kiln-${index + 1}`,
+        name: kiln.nickname ?? "Unnamed kiln",
+        model:
+          kiln.type === "digital"
+            ? "Digital controller"
+            : kiln.manualControl === "switches"
+              ? "Manual switches kiln"
+              : "Manual dial kiln",
+        location: kiln.location ?? "Studio",
+      }));
+
+    const loadKilns = async () => {
+      const storedKilns = await loadAdminKilns<AdminKiln>([]);
+      if (!isMounted) return;
+      setKilnOptions(mapKilnsToOptions(storedKilns));
+    };
+
+    void loadKilns();
+
+    const handleStorageUpdate = async (event: StorageEvent) => {
+      if (event.key && event.key !== ADMIN_KILNS_KEY) return;
+      const latestKilns = await loadAdminKilns<AdminKiln>([]);
+      if (!isMounted) return;
+      setKilnOptions(mapKilnsToOptions(latestKilns));
+    };
+
+    window.addEventListener("storage", handleStorageUpdate);
+
+    return () => {
+      isMounted = false;
+      window.removeEventListener("storage", handleStorageUpdate);
+    };
   }, []);
 
   const [form, setForm] = useState({
