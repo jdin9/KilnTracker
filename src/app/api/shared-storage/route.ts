@@ -4,6 +4,59 @@ import path from "node:path";
 
 const STORAGE_PATH = path.join(process.cwd(), "data", "shared-storage.json");
 
+const kvUrl = process.env.KV_REST_API_URL;
+const kvToken = process.env.KV_REST_API_TOKEN;
+const hasKv = Boolean(kvUrl && kvToken);
+
+const kvHeaders = kvToken
+  ? {
+      Authorization: `Bearer ${kvToken}`,
+      "Content-Type": "application/json",
+    }
+  : undefined;
+
+async function readAllFromKv(): Promise<Record<string, string> | null> {
+  if (!hasKv || !kvHeaders || !kvUrl) return null;
+
+  try {
+    const response = await fetch(`${kvUrl}/hgetall/kilntracker:shared`, {
+      headers: kvHeaders,
+      cache: "no-store",
+    });
+
+    if (!response.ok) {
+      throw new Error(`KV hgetall failed with status ${response.status}`);
+    }
+
+    const data = (await response.json()) as Record<string, string> | null;
+    return data ?? {};
+  } catch (error) {
+    console.error("Failed to read shared storage from KV", error);
+    return null;
+  }
+}
+
+async function writeAllToKv(payload: Record<string, string>) {
+  if (!hasKv || !kvHeaders || !kvUrl) return false;
+
+  try {
+    const response = await fetch(`${kvUrl}/hset/kilntracker:shared`, {
+      method: "POST",
+      headers: kvHeaders,
+      body: JSON.stringify(payload),
+    });
+
+    if (!response.ok) {
+      throw new Error(`KV hset failed with status ${response.status}`);
+    }
+
+    return true;
+  } catch (error) {
+    console.error("Failed to write shared storage to KV", error);
+    return false;
+  }
+}
+
 async function ensureStorageFile() {
   await fs.mkdir(path.dirname(STORAGE_PATH), { recursive: true });
 
@@ -15,6 +68,11 @@ async function ensureStorageFile() {
 }
 
 async function readStorage(): Promise<Record<string, string>> {
+  if (hasKv) {
+    const fromKv = await readAllFromKv();
+    if (fromKv) return fromKv;
+  }
+
   await ensureStorageFile();
 
   try {
@@ -28,6 +86,8 @@ async function readStorage(): Promise<Record<string, string>> {
 }
 
 async function writeStorage(payload: Record<string, string>) {
+  if (hasKv && (await writeAllToKv(payload))) return;
+
   await ensureStorageFile();
 
   try {
