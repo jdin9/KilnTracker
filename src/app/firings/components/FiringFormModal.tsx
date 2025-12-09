@@ -203,7 +203,7 @@ export function FiringFormModal({ open, onClose, mode = "create", initialData }:
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/70 backdrop-blur-sm p-4">
+    <div className="fixed inset-0 z-50 flex min-h-full items-start justify-center overflow-y-auto bg-slate-900/70 p-4 py-8 backdrop-blur-sm sm:p-6 md:items-center">
       <div className="relative w-full max-w-4xl overflow-hidden rounded-2xl bg-white shadow-2xl ring-1 ring-slate-200">
         <div className="absolute inset-0 bg-gradient-to-br from-blue-50 via-white to-amber-50" aria-hidden />
         <div className="relative flex items-start justify-between p-6">
