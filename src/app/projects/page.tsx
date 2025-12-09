@@ -185,19 +185,37 @@ export default function ProjectsPage() {
   const coneOptions = useMemo(() => coneChart, []);
 
   React.useEffect(() => {
-    const storedColors = loadAdminStudioColors(initialStudioColors);
-    setActiveGlazes(getActiveStudioColors(storedColors));
-    setInactiveStudioGlazes(storedColors.filter((color) => color.retired));
-    setClayBodyOptions(loadAdminClayBodies(initialClayBodies));
+    let isMounted = true;
+
+    const loadAdminData = async () => {
+      const storedColors = await loadAdminStudioColors(initialStudioColors);
+      const storedClayBodies = await loadAdminClayBodies(initialClayBodies);
+
+      if (!isMounted) return;
+
+      setActiveGlazes(getActiveStudioColors(storedColors));
+      setInactiveStudioGlazes(storedColors.filter((color) => color.retired));
+      setClayBodyOptions(storedClayBodies);
+    };
 
     const refreshStoredProjects = () => {
       setStoredProjects(loadStoredProjects());
     };
 
+    void loadAdminData();
     refreshStoredProjects();
-    window.addEventListener("storage", refreshStoredProjects);
 
-    return () => window.removeEventListener("storage", refreshStoredProjects);
+    const handleStorageUpdate = () => {
+      void loadAdminData();
+      refreshStoredProjects();
+    };
+
+    window.addEventListener("storage", handleStorageUpdate);
+
+    return () => {
+      isMounted = false;
+      window.removeEventListener("storage", handleStorageUpdate);
+    };
   }, []);
 
   const combinedProjects = useMemo(() => {

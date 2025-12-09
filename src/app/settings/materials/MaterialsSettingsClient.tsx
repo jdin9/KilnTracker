@@ -18,7 +18,18 @@ export default function MaterialsPage() {
   const [clayForm, setClayForm] = useState({ name: "", bisqueTemp: "", notes: "" });
 
   useEffect(() => {
-    setClayBodies(loadAdminClayBodies(initialClayBodies));
+    let isMounted = true;
+
+    const loadClayBodies = async () => {
+      const storedClayBodies = await loadAdminClayBodies(initialClayBodies);
+      if (isMounted) setClayBodies(storedClayBodies);
+    };
+
+    void loadClayBodies();
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   const addGlaze = () => {

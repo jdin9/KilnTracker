@@ -38,13 +38,30 @@ export default function NewProjectPage() {
   );
 
   useEffect(() => {
-    setClayBodyOptions(loadAdminClayBodies(initialClayBodies));
-    setMakerOptions(
-      loadAdminUsers(initialUsers).map((user) => ({
-        ...user,
-        fullName: `${user.firstName} ${user.lastName}`,
-      }))
-    );
+    let isMounted = true;
+
+    const loadAdminData = async () => {
+      const [storedClayBodies, storedUsers] = await Promise.all([
+        loadAdminClayBodies(initialClayBodies),
+        loadAdminUsers(initialUsers),
+      ]);
+
+      if (!isMounted) return;
+
+      setClayBodyOptions(storedClayBodies);
+      setMakerOptions(
+        storedUsers.map((user) => ({
+          ...user,
+          fullName: `${user.firstName} ${user.lastName}`,
+        }))
+      );
+    };
+
+    void loadAdminData();
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
