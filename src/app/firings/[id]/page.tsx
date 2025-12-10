@@ -49,18 +49,6 @@ type Kiln = {
 const KILNS_STORAGE_KEY = "kiln-admin-kilns";
 const defaultKilns: Kiln[] = [];
 
-const mockFiring: Firing = {
-  id: "1",
-  kilnName: "Big Manual Kiln",
-  kilnModel: "Skutt KM1227",
-  location: "Studio North",
-  firingType: "glaze",
-  status: "open",
-  targetCone: "6",
-  targetTemp: 2232,
-  startTime: "2024-05-25T08:00:00Z",
-};
-
 const OPEN_DETAIL_KEY = "kiln-open-firing-details";
 const HISTORY_DETAIL_KEY = "kiln-firing-history-details";
 
@@ -194,13 +182,13 @@ export default function FiringDetailPage({ params }: { params: { id: string } })
     return () => {
       active = false;
     };
-    }, [params.id, storageHydrated]);
+  }, [params.id]);
 
   useEffect(() => {
     if (!storageHydrated) return;
     const fromOpen = getStoredFiring(params.id);
     const fromHistory = getStoredHistoryFiring(params.id);
-    const resolvedFiring = fromOpen ?? fromHistory ?? (params.id === mockFiring.id ? mockFiring : null);
+    const resolvedFiring = fromOpen ?? fromHistory ?? null;
     setFiring(resolvedFiring);
     setLoading(false);
 
