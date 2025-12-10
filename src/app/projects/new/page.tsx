@@ -81,7 +81,7 @@ export default function NewProjectPage() {
       name: photo.name,
       url: photo.url,
     }));
-    saveStoredProject({
+    await saveStoredProject({
       id: res.id,
       title: form.title || "Untitled Project",
       clayBody:
