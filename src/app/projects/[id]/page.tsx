@@ -37,7 +37,8 @@ export default function ProjectDetailPage({ params }: { params: { id: string } }
   const [activityPhotos, setActivityPhotos] = useState<File[]>([]);
   const [photoInputKey, setPhotoInputKey] = useState(0);
 
-  const storedProjects = useMemo(() => loadStoredProjects(), []);
+  const [storedProjects, setStoredProjects] = useState<StoredProject[]>([]);
+  const [projectsLoaded, setProjectsLoaded] = useState(false);
   const [studioColors, setStudioColors] = useState(initialStudioColors);
   const activeColors = useMemo(() => getActiveStudioColors(studioColors), [studioColors]);
 
@@ -64,6 +65,32 @@ export default function ProjectDetailPage({ params }: { params: { id: string } }
   }, []);
 
   useEffect(() => {
+    let isMounted = true;
+
+    const loadProjects = async () => {
+      const projects = await loadStoredProjects();
+      if (!isMounted) return;
+      setStoredProjects(projects);
+      setProjectsLoaded(true);
+    };
+
+    void loadProjects();
+
+    const handleStorageUpdate = () => {
+      void loadProjects();
+    };
+
+    window.addEventListener("storage", handleStorageUpdate);
+
+    return () => {
+      isMounted = false;
+      window.removeEventListener("storage", handleStorageUpdate);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!projectsLoaded) return;
+
     const storedMatch = storedProjects.find((project) => project.id === params.id);
 
     if (storedMatch) {
@@ -72,15 +99,15 @@ export default function ProjectDetailPage({ params }: { params: { id: string } }
     }
 
     setData(null);
-  }, [params.id, storedProjects]);
+  }, [params.id, projectsLoaded, storedProjects]);
 
-  const handleDeleteProject = () => {
+  const handleDeleteProject = async () => {
     if (!data || data === "loading") return;
 
     const confirmDelete = window.confirm("Delete this project and all of its steps?");
     if (!confirmDelete) return;
 
-    deleteStoredProject(data.id);
+    await deleteStoredProject(data.id);
 
     router.push("/projects");
   };
@@ -134,7 +161,7 @@ export default function ProjectDetailPage({ params }: { params: { id: string } }
         steps: updatedSteps,
         glazes: collectProjectGlazes({ ...prev, steps: updatedSteps }),
       };
-      saveStoredProject(updated);
+      void saveStoredProject(updated);
       return updated;
     });
 

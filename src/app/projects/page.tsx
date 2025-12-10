@@ -198,16 +198,18 @@ export default function ProjectsPage() {
       setClayBodyOptions(storedClayBodies);
     };
 
-    const refreshStoredProjects = () => {
-      setStoredProjects(loadStoredProjects());
+    const refreshStoredProjects = async () => {
+      const projects = await loadStoredProjects();
+      if (!isMounted) return;
+      setStoredProjects(projects);
     };
 
     void loadAdminData();
-    refreshStoredProjects();
+    void refreshStoredProjects();
 
     const handleStorageUpdate = () => {
       void loadAdminData();
-      refreshStoredProjects();
+      void refreshStoredProjects();
     };
 
     window.addEventListener("storage", handleStorageUpdate);
