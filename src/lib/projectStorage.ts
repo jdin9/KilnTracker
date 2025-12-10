@@ -1,3 +1,5 @@
+import { persistSharedJson, readSharedJson } from "./sharedJsonStorage";
+
 export type StoredProject = {
   id: string;
   title: string;
@@ -20,46 +22,24 @@ export type StoredProjectPhoto = {
 
 const STORAGE_KEY = "kilntracker.projects";
 
-const readStorage = (): StoredProject[] => {
-  if (typeof window === "undefined") return [];
+const defaultProjects: StoredProject[] = [];
 
-  try {
-    const raw = window.localStorage.getItem(STORAGE_KEY);
-    if (!raw) return [];
-
-    const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed : [];
-  } catch (error) {
-    console.error("Failed to read stored projects", error);
-    return [];
-  }
+export const loadStoredProjects = async (): Promise<StoredProject[]> => {
+  const projects = await readSharedJson<StoredProject[]>(STORAGE_KEY, defaultProjects);
+  return Array.isArray(projects) ? projects : defaultProjects;
 };
 
-export const loadStoredProjects = (): StoredProject[] => readStorage();
-
-export const saveStoredProject = (project: StoredProject) => {
-  if (typeof window === "undefined") return;
-
-  const existing = readStorage();
+export const saveStoredProject = async (project: StoredProject) => {
+  const existing = await loadStoredProjects();
   const withoutDuplicate = existing.filter((entry) => entry.id !== project.id);
   const updated = [...withoutDuplicate, project];
 
-  try {
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
-  } catch (error) {
-    console.error("Failed to persist project", error);
-  }
+  await persistSharedJson(STORAGE_KEY, updated);
 };
 
-export const deleteStoredProject = (projectId: string) => {
-  if (typeof window === "undefined") return;
-
-  const existing = readStorage();
+export const deleteStoredProject = async (projectId: string) => {
+  const existing = await loadStoredProjects();
   const updated = existing.filter((entry) => entry.id !== projectId);
 
-  try {
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
-  } catch (error) {
-    console.error("Failed to delete project", error);
-  }
+  await persistSharedJson(STORAGE_KEY, updated);
 };
