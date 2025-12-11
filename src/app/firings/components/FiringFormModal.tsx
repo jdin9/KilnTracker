@@ -134,12 +134,17 @@ export function FiringFormModal({ open, onClose, mode = "create", initialData }:
   const persistOpenFiring = async (payload: any) => {
     if (typeof window === "undefined") return;
     const kiln = kilnOptions.find((k) => k.id === form.kilnId);
+    if (!kiln) {
+      alert("Please select a kiln before starting a firing.");
+      return;
+    }
+
     const parsed = await readSharedJson("kiln-open-firings", [] as any[]);
     const detailsStore = await readSharedJson("kiln-open-firing-details", {} as Record<string, any>);
 
     const openFiringEntry = {
       id: payload.id,
-      kilnName: kiln?.name ?? "Unknown kiln",
+      kilnName: kiln.name,
       status: "Started",
       targetCone: payload.target_cone,
       targetTemp: payload.target_temp,
@@ -148,9 +153,9 @@ export function FiringFormModal({ open, onClose, mode = "create", initialData }:
 
     const firingDetail = {
       id: payload.id,
-      kilnName: kiln?.name ?? "Unknown kiln",
-      kilnModel: kiln?.model ?? "Manual kiln",
-      location: kiln?.location ?? "Studio",
+      kilnName: kiln.name,
+      kilnModel: kiln.model,
+      location: kiln.location,
       firingType: form.firingType,
       status: "open",
       targetCone: payload.target_cone,
@@ -159,7 +164,10 @@ export function FiringFormModal({ open, onClose, mode = "create", initialData }:
       notes: form.notes || undefined,
     };
 
-    await persistSharedJson("kiln-open-firings", [...parsed, openFiringEntry]);
+    await persistSharedJson(
+      "kiln-open-firings",
+      parsed.filter((entry: any) => entry?.id && entry?.kilnName && entry?.startedAt).concat(openFiringEntry),
+    );
 
     await persistSharedJson("kiln-open-firing-details", {
       ...detailsStore,

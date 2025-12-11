@@ -24,9 +24,9 @@ type Activity = {
 type Firing = {
   id: string;
   kilnName: string;
-  kilnModel: string;
-  location: string;
-  firingType: string;
+  kilnModel?: string;
+  location?: string;
+  firingType?: string;
   status: "open" | "closed";
   targetCone: string;
   targetTemp?: number;
@@ -84,18 +84,21 @@ const getStoredFiring = (id: string): Firing | null => {
   const open = readStorage("kiln-open-firings");
   const parsed = open ? JSON.parse(open) : [];
   const match = parsed.find((item: any) => item.id === id);
-  if (!match) return null;
+  if (!match?.id || !match?.kilnName) return null;
+
+  const startTime = match.startedAt ?? match.startTime ?? match.date;
+  if (!startTime) return null;
 
   return {
     id: match.id,
     kilnName: match.kilnName,
-    kilnModel: match.kilnModel ?? "Manual kiln",
-    location: match.location ?? "Studio",
-    firingType: match.firingType ?? "bisque",
+    kilnModel: match.kilnModel ?? undefined,
+    location: match.location ?? undefined,
+    firingType: match.firingType ?? undefined,
     status: "open",
     targetCone: match.targetCone,
     targetTemp: match.targetTemp,
-    startTime: match.startedAt,
+    startTime,
   };
 };
 
@@ -115,14 +118,14 @@ const getStoredHistoryFiring = (id: string): Firing | null => {
   const history = readStorage("kiln-firing-history");
   const parsed = history ? JSON.parse(history) : [];
   const match = parsed.find((item: any) => item.id === id);
-  if (!match) return null;
+  if (!match?.id || !match?.kiln || !match?.date) return null;
 
   return {
     id: match.id,
     kilnName: match.kiln,
-    kilnModel: match.kilnModel ?? "Manual kiln",
-    location: match.location ?? "Studio",
-    firingType: match.firingType ?? "bisque",
+    kilnModel: match.kilnModel ?? undefined,
+    location: match.location ?? undefined,
+    firingType: match.firingType ?? undefined,
     status: "closed",
     targetCone: match.targetCone,
     targetTemp: match.targetTemp,
@@ -325,6 +328,12 @@ export default function FiringDetailPage({ params }: { params: { id: string } })
 
     if (inferredType === "close") {
       const endTime = new Date(form.timestamp).toISOString();
+      if (!firing.kilnName || !firing.startTime) {
+        alert("Missing firing details. Please reopen the firing and try again.");
+        resetForm();
+        return;
+      }
+
       const updatedFiring: Firing = {
         ...firing,
         status: "closed",
@@ -335,7 +344,7 @@ export default function FiringDetailPage({ params }: { params: { id: string } })
 
       if (typeof window !== "undefined") {
         const openEntries = await readSharedJson("kiln-open-firings", [] as any[]);
-        const remaining = openEntries.filter((item: any) => item.id !== firing.id);
+        const remaining = openEntries.filter((item: any) => item?.id && item?.kilnName && item?.startedAt && item.id !== firing.id);
         await persistJson("kiln-open-firings", remaining);
 
         const openDetails = await readSharedJson(OPEN_DETAIL_KEY, {} as Record<string, any>);
@@ -357,8 +366,12 @@ export default function FiringDetailPage({ params }: { params: { id: string } })
         });
 
         const historyParsed = await readSharedJson("kiln-firing-history", [] as any[]);
+        const validHistory = Array.isArray(historyParsed)
+          ? historyParsed.filter((entry: any) => entry?.id && entry?.kiln && entry?.date)
+          : [];
+
         await persistJson("kiln-firing-history", [
-          ...historyParsed,
+          ...validHistory,
           {
             id: firing.id,
             date: firing.startTime,
@@ -460,11 +473,11 @@ export default function FiringDetailPage({ params }: { params: { id: string } })
                 </div>
                 <div>
                   <dt className="text-xs uppercase tracking-wide text-gray-500">Model</dt>
-                  <dd className="font-semibold text-gray-900">{firing.kilnModel}</dd>
+                  <dd className="font-semibold text-gray-900">{firing.kilnModel ?? "—"}</dd>
                 </div>
                 <div>
                   <dt className="text-xs uppercase tracking-wide text-gray-500">Location</dt>
-                  <dd className="font-semibold text-gray-900">{firing.location}</dd>
+                  <dd className="font-semibold text-gray-900">{firing.location ?? "—"}</dd>
                 </div>
                 <div>
                   <dt className="text-xs uppercase tracking-wide text-gray-500">Target temp</dt>

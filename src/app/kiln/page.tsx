@@ -89,15 +89,16 @@ export default function KilnDashboardPage() {
       try {
         const open = await readSharedJson("kiln-open-firings", [] as OpenFiring[]);
         const normalizedOpen = Array.isArray(open)
-          ? open.map((firing: any) => {
-              const collected = collectPhotosForFiring(firing.id, firing.loadPhotos ?? []);
-              return {
-                ...firing,
-                loadPhotos: firing.loadPhotos ?? [],
-                firstPhoto: collected[0] ?? firing.firstPhoto ?? getFirstPhoto(firing.loadPhotos),
-                startedAt: firing.startedAt ?? firing.startTime ?? firing.date,
-              };
-            })
+          ? open
+              .filter((firing: any) => firing?.id && firing?.kilnName && firing?.startedAt)
+              .map((firing: any) => {
+                const collected = collectPhotosForFiring(firing.id, firing.loadPhotos ?? []);
+                return {
+                  ...firing,
+                  loadPhotos: firing.loadPhotos ?? [],
+                  firstPhoto: collected[0] ?? firing.firstPhoto ?? getFirstPhoto(firing.loadPhotos),
+                };
+              })
           : [];
 
         if (!active) return;
@@ -109,14 +110,16 @@ export default function KilnDashboardPage() {
       try {
         const history = await readSharedJson("kiln-firing-history", [] as FiringHistoryRow[]);
         const normalizedHistory = Array.isArray(history)
-          ? history.map((firing: any) => {
-              const collected = collectPhotosForFiring(firing.id, firing.loadPhotos ?? []);
-              return {
-                ...firing,
-                loadPhotos: firing.loadPhotos ?? [],
-                firstPhoto: collected[0] ?? firing.firstPhoto ?? getFirstPhoto(firing.loadPhotos),
-              };
-            })
+          ? history
+              .filter((firing: any) => firing?.id && firing?.kiln && firing?.date)
+              .map((firing: any) => {
+                const collected = collectPhotosForFiring(firing.id, firing.loadPhotos ?? []);
+                return {
+                  ...firing,
+                  loadPhotos: firing.loadPhotos ?? [],
+                  firstPhoto: collected[0] ?? firing.firstPhoto ?? getFirstPhoto(firing.loadPhotos),
+                };
+              })
           : [];
 
         if (!active) return;
