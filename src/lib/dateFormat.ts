@@ -1,12 +1,10 @@
 const dateFormatter = new Intl.DateTimeFormat("en-US", {
   dateStyle: "medium",
-  timeZone: "UTC",
 });
 
 const dateTimeFormatter = new Intl.DateTimeFormat("en-US", {
   dateStyle: "medium",
   timeStyle: "medium",
-  timeZone: "UTC",
 });
 
 export function formatDate(value: string | number | Date) {

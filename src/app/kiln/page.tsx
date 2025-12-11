@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 
 import { formatDate, formatDateTime } from "@/lib/dateFormat";
+import { persistSharedJson, readSharedJson } from "@/lib/sharedJsonStorage";
 
 type PhotoAsset = { name: string; src: string };
 
@@ -65,37 +66,8 @@ const getFirstPhoto = (photos?: (string | PhotoAsset)[]) => {
   return normalized[0];
 };
 
-const defaultOpenFirings: OpenFiring[] = [
-  {
-    id: "1",
-    kilnName: "Big Manual Kiln",
-    status: "Ramp 2",
-    targetCone: "6",
-    targetTemp: 2232,
-    startedAt: "2024-06-02T08:15:00Z",
-    loadPhotos: [
-      { name: "load-front.jpg", src: resolvePhotoUrl("load-front.jpg", 0) },
-      { name: "load-shelf.jpg", src: resolvePhotoUrl("load-shelf.jpg", 1) },
-    ],
-    firstPhoto: getFirstPhoto([
-      { name: "load-front.jpg", src: resolvePhotoUrl("load-front.jpg", 0) },
-      { name: "load-shelf.jpg", src: resolvePhotoUrl("load-shelf.jpg", 1) },
-    ]),
-  },
-  {
-    id: "2",
-    kilnName: "Test Kiln",
-    status: "Candling",
-    targetCone: "04",
-    targetTemp: 1940,
-    startedAt: "2024-06-03T06:30:00Z",
-    loadPhotos: [{ name: "test-candling.jpg", src: resolvePhotoUrl("test-candling.jpg", 2) }],
-    firstPhoto: getFirstPhoto([{ name: "test-candling.jpg", src: resolvePhotoUrl("test-candling.jpg", 2) }]),
-  },
-];
-
 export default function KilnDashboardPage() {
-  const [openFirings, setOpenFirings] = useState<OpenFiring[]>(defaultOpenFirings);
+  const [openFirings, setOpenFirings] = useState<OpenFiring[]>([]);
   const [firingHistory, setFiringHistory] = useState<FiringHistoryRow[]>([]);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [selectedKiln, setSelectedKiln] = useState<string>("all");
@@ -111,50 +83,58 @@ export default function KilnDashboardPage() {
   useEffect(() => {
     if (typeof window === "undefined") return;
 
-    const open = window.localStorage.getItem("kiln-open-firings");
-    const history = window.localStorage.getItem("kiln-firing-history");
+    let active = true;
 
-    try {
-      if (open) {
-        const parsed = JSON.parse(open);
-        const normalized = Array.isArray(parsed)
-          ? parsed.map((firing: any, index: number) => {
-              const collected = collectPhotosForFiring(firing.id, firing.loadPhotos ?? []);
-              return {
-                ...firing,
-                loadPhotos: firing.loadPhotos ?? [],
-                firstPhoto: collected[0] ?? firing.firstPhoto ?? getFirstPhoto(firing.loadPhotos),
-                startedAt: firing.startedAt ?? firing.startTime ?? firing.date ?? defaultOpenFirings[index]?.startedAt,
-              };
-            })
-          : defaultOpenFirings;
-        setOpenFirings(normalized);
-      } else {
-        window.localStorage.setItem("kiln-open-firings", JSON.stringify(defaultOpenFirings));
-      }
-    } catch (error) {
-      console.error("Unable to parse open firings", error);
-    }
-
-    try {
-      if (history) {
-        const parsedHistory = JSON.parse(history);
-        const normalizedHistory = Array.isArray(parsedHistory)
-          ? parsedHistory.map((firing: any) => {
-              const collected = collectPhotosForFiring(firing.id, firing.loadPhotos ?? []);
-              return {
-                ...firing,
-                loadPhotos: firing.loadPhotos ?? [],
-                firstPhoto: collected[0] ?? firing.firstPhoto ?? getFirstPhoto(firing.loadPhotos),
-              };
-            })
+    const loadSharedFirings = async () => {
+      try {
+        const open = await readSharedJson("kiln-open-firings", [] as OpenFiring[]);
+        const normalizedOpen = Array.isArray(open)
+          ? open
+              .filter((firing: any) => firing?.id && firing?.kilnName && firing?.startedAt)
+              .map((firing: any) => {
+                const collected = collectPhotosForFiring(firing.id, firing.loadPhotos ?? []);
+                return {
+                  ...firing,
+                  loadPhotos: firing.loadPhotos ?? [],
+                  firstPhoto: collected[0] ?? firing.firstPhoto ?? getFirstPhoto(firing.loadPhotos),
+                };
+              })
           : [];
-        setFiringHistory(normalizedHistory);
+
+        if (!active) return;
+        setOpenFirings(normalizedOpen);
+      } catch (error) {
+        console.error("Unable to parse open firings", error);
       }
-    } catch (error) {
-      console.error("Unable to parse firing history", error);
-      setFiringHistory([]);
-    }
+
+      try {
+        const history = await readSharedJson("kiln-firing-history", [] as FiringHistoryRow[]);
+        const normalizedHistory = Array.isArray(history)
+          ? history
+              .filter((firing: any) => firing?.id && firing?.kiln && firing?.date)
+              .map((firing: any) => {
+                const collected = collectPhotosForFiring(firing.id, firing.loadPhotos ?? []);
+                return {
+                  ...firing,
+                  loadPhotos: firing.loadPhotos ?? [],
+                  firstPhoto: collected[0] ?? firing.firstPhoto ?? getFirstPhoto(firing.loadPhotos),
+                };
+              })
+          : [];
+
+        if (!active) return;
+        setFiringHistory(normalizedHistory);
+      } catch (error) {
+        console.error("Unable to parse firing history", error);
+        if (active) setFiringHistory([]);
+      }
+    };
+
+    void loadSharedFirings();
+
+    return () => {
+      active = false;
+    };
   }, []);
 
   const collectPhotosForFiring = (firingId: string, loadPhotos?: (string | PhotoAsset)[]) => {

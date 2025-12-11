@@ -6,6 +6,7 @@ import Link from "next/link";
 import { notFound, useRouter } from "next/navigation";
 
 import { formatDateTime } from "@/lib/dateFormat";
+import { deleteSharedJson, persistSharedJson, readSharedJson } from "@/lib/sharedJsonStorage";
 
 type ActivityType = "dial" | "switch" | "temp" | "note" | "shutdown" | "close";
 
@@ -23,9 +24,9 @@ type Activity = {
 type Firing = {
   id: string;
   kilnName: string;
-  kilnModel: string;
-  location: string;
-  firingType: string;
+  kilnModel?: string;
+  location?: string;
+  firingType?: string;
   status: "open" | "closed";
   targetCone: string;
   targetTemp?: number;
@@ -47,18 +48,6 @@ type Kiln = {
 
 const KILNS_STORAGE_KEY = "kiln-admin-kilns";
 const defaultKilns: Kiln[] = [];
-
-const mockFiring: Firing = {
-  id: "1",
-  kilnName: "Big Manual Kiln",
-  kilnModel: "Skutt KM1227",
-  location: "Studio North",
-  firingType: "glaze",
-  status: "open",
-  targetCone: "6",
-  targetTemp: 2232,
-  startTime: "2024-05-25T08:00:00Z",
-};
 
 const OPEN_DETAIL_KEY = "kiln-open-firing-details";
 const HISTORY_DETAIL_KEY = "kiln-firing-history-details";
@@ -95,18 +84,21 @@ const getStoredFiring = (id: string): Firing | null => {
   const open = readStorage("kiln-open-firings");
   const parsed = open ? JSON.parse(open) : [];
   const match = parsed.find((item: any) => item.id === id);
-  if (!match) return null;
+  if (!match?.id || !match?.kilnName) return null;
+
+  const startTime = match.startedAt ?? match.startTime ?? match.date;
+  if (!startTime) return null;
 
   return {
     id: match.id,
     kilnName: match.kilnName,
-    kilnModel: match.kilnModel ?? "Manual kiln",
-    location: match.location ?? "Studio",
-    firingType: match.firingType ?? "bisque",
+    kilnModel: match.kilnModel ?? undefined,
+    location: match.location ?? undefined,
+    firingType: match.firingType ?? undefined,
     status: "open",
     targetCone: match.targetCone,
     targetTemp: match.targetTemp,
-    startTime: match.startedAt,
+    startTime,
   };
 };
 
@@ -126,14 +118,14 @@ const getStoredHistoryFiring = (id: string): Firing | null => {
   const history = readStorage("kiln-firing-history");
   const parsed = history ? JSON.parse(history) : [];
   const match = parsed.find((item: any) => item.id === id);
-  if (!match) return null;
+  if (!match?.id || !match?.kiln || !match?.date) return null;
 
   return {
     id: match.id,
     kilnName: match.kiln,
-    kilnModel: match.kilnModel ?? "Manual kiln",
-    location: match.location ?? "Studio",
-    firingType: match.firingType ?? "bisque",
+    kilnModel: match.kilnModel ?? undefined,
+    location: match.location ?? undefined,
+    firingType: match.firingType ?? undefined,
     status: "closed",
     targetCone: match.targetCone,
     targetTemp: match.targetTemp,
@@ -143,34 +135,15 @@ const getStoredHistoryFiring = (id: string): Firing | null => {
   };
 };
 
-const safePersist = (key: string, value: string) => {
+const persistJson = async (key: string, value: any) => {
   if (typeof window === "undefined") return;
-  try {
-    window.localStorage.setItem(key, value);
-  } catch (error) {
-    console.warn(`Unable to persist ${key} to localStorage`, error);
-    try {
-      window.sessionStorage.setItem(key, value);
-    } catch (sessionError) {
-      console.warn(`Unable to persist ${key} to sessionStorage`, sessionError);
-    }
-  }
+  await persistSharedJson(key, value);
 };
 
-const removeStoredItem = (key: string) => {
+const removeStoredItem = async (key: string) => {
   if (typeof window === "undefined") return;
 
-  try {
-    window.localStorage.removeItem(key);
-  } catch (error) {
-    console.warn(`Unable to remove ${key} from localStorage`, error);
-  }
-
-  try {
-    window.sessionStorage.removeItem(key);
-  } catch (error) {
-    console.warn(`Unable to remove ${key} from sessionStorage`, error);
-  }
+  await deleteSharedJson(key);
 };
 
 export default function FiringDetailPage({ params }: { params: { id: string } }) {
@@ -178,6 +151,7 @@ export default function FiringDetailPage({ params }: { params: { id: string } })
   const [kilnConfig, setKilnConfig] = useState<Kiln | null>(null);
   const [activities, setActivities] = useState<Activity[]>([]);
   const [loading, setLoading] = useState(true);
+  const [storageHydrated, setStorageHydrated] = useState(false);
   const router = useRouter();
   const [form, setForm] = useState({
     timestamp: nowLocal(),
@@ -192,9 +166,32 @@ export default function FiringDetailPage({ params }: { params: { id: string } })
   });
 
   useEffect(() => {
+    let active = true;
+
+    const hydrateStorage = async () => {
+      await Promise.all([
+        readSharedJson("kiln-open-firings", null as any),
+        readSharedJson(OPEN_DETAIL_KEY, null as any),
+        readSharedJson("kiln-firing-history", null as any),
+        readSharedJson(HISTORY_DETAIL_KEY, null as any),
+        readSharedJson(`firing-${params.id}-events`, null as any),
+      ]);
+
+      if (active) setStorageHydrated(true);
+    };
+
+    void hydrateStorage();
+
+    return () => {
+      active = false;
+    };
+  }, [params.id]);
+
+  useEffect(() => {
+    if (!storageHydrated) return;
     const fromOpen = getStoredFiring(params.id);
     const fromHistory = getStoredHistoryFiring(params.id);
-    const resolvedFiring = fromOpen ?? fromHistory ?? (params.id === mockFiring.id ? mockFiring : null);
+    const resolvedFiring = fromOpen ?? fromHistory ?? null;
     setFiring(resolvedFiring);
     setLoading(false);
 
@@ -226,12 +223,12 @@ export default function FiringDetailPage({ params }: { params: { id: string } })
         }
       }
     }
-  }, [params.id]);
+  }, [params.id, storageHydrated]);
 
   useEffect(() => {
-    if (typeof window === "undefined") return;
-    safePersist(`firing-${params.id}-events`, JSON.stringify(activities));
-  }, [activities, params.id]);
+    if (!storageHydrated) return;
+    void persistJson(`firing-${params.id}-events`, activities);
+  }, [activities, params.id, storageHydrated]);
 
   useEffect(() => {
     if (kilnConfig?.manualControl === "dial") {
@@ -290,7 +287,7 @@ export default function FiringDetailPage({ params }: { params: { id: string } })
 
   if (!firing) return null;
 
-  const handleAddActivity = (e: React.FormEvent) => {
+  const handleAddActivity = async (e: React.FormEvent) => {
     e.preventDefault();
     const inferredType: ActivityType = form.closeFiring
       ? "close"
@@ -331,6 +328,12 @@ export default function FiringDetailPage({ params }: { params: { id: string } })
 
     if (inferredType === "close") {
       const endTime = new Date(form.timestamp).toISOString();
+      if (!firing.kilnName || !firing.startTime) {
+        alert("Missing firing details. Please reopen the firing and try again.");
+        resetForm();
+        return;
+      }
+
       const updatedFiring: Firing = {
         ...firing,
         status: "closed",
@@ -340,55 +343,49 @@ export default function FiringDetailPage({ params }: { params: { id: string } })
       setFiring(updatedFiring);
 
       if (typeof window !== "undefined") {
-        const open = window.localStorage.getItem("kiln-open-firings");
-        const parsed = open ? JSON.parse(open) : [];
-        const remaining = parsed.filter((item: any) => item.id !== firing.id);
-        safePersist("kiln-open-firings", JSON.stringify(remaining));
+        const openEntries = await readSharedJson("kiln-open-firings", [] as any[]);
+        const remaining = openEntries.filter((item: any) => item?.id && item?.kilnName && item?.startedAt && item.id !== firing.id);
+        await persistJson("kiln-open-firings", remaining);
 
-        const openDetailRaw = window.localStorage.getItem(OPEN_DETAIL_KEY);
-        const openDetails = openDetailRaw ? JSON.parse(openDetailRaw) : {};
+        const openDetails = await readSharedJson(OPEN_DETAIL_KEY, {} as Record<string, any>);
         if (openDetails[firing.id]) {
           delete openDetails[firing.id];
-          safePersist(OPEN_DETAIL_KEY, JSON.stringify(openDetails));
+          await persistJson(OPEN_DETAIL_KEY, openDetails);
         }
 
-        const historyDetailRaw = window.localStorage.getItem(HISTORY_DETAIL_KEY);
-        const historyDetails = historyDetailRaw ? JSON.parse(historyDetailRaw) : {};
+        const historyDetails = await readSharedJson(HISTORY_DETAIL_KEY, {} as Record<string, Firing>);
         const closedDetail: Firing = {
           ...firing,
           status: "closed",
           endTime,
           maxTemp: activity.pyrometerTemp ?? firing.maxTemp,
         };
-        safePersist(
-          HISTORY_DETAIL_KEY,
-          JSON.stringify({
-            ...historyDetails,
-            [firing.id]: closedDetail,
-          }),
-        );
+        await persistJson(HISTORY_DETAIL_KEY, {
+          ...historyDetails,
+          [firing.id]: closedDetail,
+        });
 
-        const history = window.localStorage.getItem("kiln-firing-history");
-        const historyParsed = history ? JSON.parse(history) : [];
-        safePersist(
-          "kiln-firing-history",
-          JSON.stringify([
-            ...historyParsed,
-            {
-              id: firing.id,
-              date: firing.startTime,
-              kiln: firing.kilnName,
-              kilnModel: firing.kilnModel,
-              location: firing.location,
-              firingType: firing.firingType,
-              targetCone: firing.targetCone,
-              targetTemp: firing.targetTemp,
-              tempReached: activity.pyrometerTemp ?? firing.maxTemp,
-              status: "Completed",
-              endTime,
-            },
-          ]),
-        );
+        const historyParsed = await readSharedJson("kiln-firing-history", [] as any[]);
+        const validHistory = Array.isArray(historyParsed)
+          ? historyParsed.filter((entry: any) => entry?.id && entry?.kiln && entry?.date)
+          : [];
+
+        await persistJson("kiln-firing-history", [
+          ...validHistory,
+          {
+            id: firing.id,
+            date: firing.startTime,
+            kiln: firing.kilnName,
+            kilnModel: firing.kilnModel,
+            location: firing.location,
+            firingType: firing.firingType,
+            targetCone: firing.targetCone,
+            targetTemp: firing.targetTemp,
+            tempReached: activity.pyrometerTemp ?? firing.maxTemp,
+            status: "Completed",
+            endTime,
+          },
+        ]);
       }
     }
 
@@ -419,42 +416,23 @@ export default function FiringDetailPage({ params }: { params: { id: string } })
     resetForm();
   };
 
-  const handleDeleteFiringFromHistory = () => {
+  const handleDeleteFiringFromHistory = async () => {
     if (!firing || firing.status !== "closed") return;
 
     const confirmDelete = window.confirm("Remove this firing from history? This cannot be undone.");
     if (!confirmDelete) return;
 
-    const historyRaw = window.localStorage.getItem("kiln-firing-history");
-    let updatedHistory: any[] = [];
+    const history = await readSharedJson("kiln-firing-history", [] as any[]);
+    const updatedHistory = history.filter((entry: any) => entry.id !== firing.id);
+    await persistJson("kiln-firing-history", updatedHistory);
 
-    if (historyRaw) {
-      try {
-        const parsed = JSON.parse(historyRaw);
-        if (Array.isArray(parsed)) {
-          updatedHistory = parsed.filter((entry) => entry.id !== firing.id);
-        }
-      } catch (error) {
-        console.error("Unable to parse firing history for deletion", error);
-      }
+    const historyDetails = await readSharedJson(HISTORY_DETAIL_KEY, {} as Record<string, any>);
+    if (historyDetails?.[firing.id]) {
+      delete historyDetails[firing.id];
+      await persistJson(HISTORY_DETAIL_KEY, historyDetails);
     }
 
-    safePersist("kiln-firing-history", JSON.stringify(updatedHistory));
-
-    const historyDetailRaw = window.localStorage.getItem(HISTORY_DETAIL_KEY);
-    if (historyDetailRaw) {
-      try {
-        const parsed = JSON.parse(historyDetailRaw);
-        if (parsed?.[firing.id]) {
-          delete parsed[firing.id];
-          safePersist(HISTORY_DETAIL_KEY, JSON.stringify(parsed));
-        }
-      } catch (error) {
-        console.error("Unable to update history details during deletion", error);
-      }
-    }
-
-    removeStoredItem(`firing-${firing.id}-events`);
+    await removeStoredItem(`firing-${firing.id}-events`);
 
     router.push("/kiln");
   };
@@ -495,11 +473,11 @@ export default function FiringDetailPage({ params }: { params: { id: string } })
                 </div>
                 <div>
                   <dt className="text-xs uppercase tracking-wide text-gray-500">Model</dt>
-                  <dd className="font-semibold text-gray-900">{firing.kilnModel}</dd>
+                  <dd className="font-semibold text-gray-900">{firing.kilnModel ?? "—"}</dd>
                 </div>
                 <div>
                   <dt className="text-xs uppercase tracking-wide text-gray-500">Location</dt>
-                  <dd className="font-semibold text-gray-900">{firing.location}</dd>
+                  <dd className="font-semibold text-gray-900">{firing.location ?? "—"}</dd>
                 </div>
                 <div>
                   <dt className="text-xs uppercase tracking-wide text-gray-500">Target temp</dt>
