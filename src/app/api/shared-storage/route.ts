@@ -2,7 +2,9 @@ import { NextResponse } from "next/server";
 import fs from "node:fs/promises";
 import path from "node:path";
 
-const STORAGE_PATH = path.join(process.cwd(), "data", "shared-storage.json");
+export const dynamic = "force-dynamic";
+
+const STORAGE_PATH = path.join(process.env.TMPDIR ?? "/tmp", "shared-storage.json");
 
 type NeonConfig = {
   endpoint: string;
@@ -33,8 +35,8 @@ function parseNeonConfig(): NeonConfig | null {
   }
 }
 
-const kvUrl = process.env.KV_REST_API_URL;
-const kvToken = process.env.KV_REST_API_TOKEN;
+const kvUrl = process.env.KV_REST_API_URL ?? process.env.UPSTASH_REDIS_REST_URL;
+const kvToken = process.env.KV_REST_API_TOKEN ?? process.env.UPSTASH_REDIS_REST_TOKEN;
 const hasKv = Boolean(kvUrl && kvToken);
 
 const neonConfig = parseNeonConfig();
@@ -213,9 +215,9 @@ async function readStorageValue(key: string): Promise<string | null> {
   }
 }
 
-async function writeStorageValue(key: string, value: string) {
-  if (await writeToNeon(key, value)) return;
-  if (await writeToKv(key, value)) return;
+async function writeStorageValue(key: string, value: string): Promise<boolean> {
+  if (await writeToNeon(key, value)) return true;
+  if (await writeToKv(key, value)) return true;
 
   await ensureStorageFile();
 
@@ -225,14 +227,16 @@ async function writeStorageValue(key: string, value: string) {
     const updated = typeof parsed === "object" && parsed !== null ? parsed : {};
     updated[key] = value;
     await fs.writeFile(STORAGE_PATH, JSON.stringify(updated, null, 2), "utf-8");
+    return true;
   } catch (error) {
     console.error("Failed to write shared storage", error);
+    return false;
   }
 }
 
-async function deleteStorageValue(key: string) {
-  if (await deleteFromNeon(key)) return;
-  if (await deleteFromKv(key)) return;
+async function deleteStorageValue(key: string): Promise<boolean> {
+  if (await deleteFromNeon(key)) return true;
+  if (await deleteFromKv(key)) return true;
 
   await ensureStorageFile();
 
@@ -242,10 +246,13 @@ async function deleteStorageValue(key: string) {
     if (typeof parsed === "object" && parsed !== null && key in parsed) {
       delete parsed[key];
       await fs.writeFile(STORAGE_PATH, JSON.stringify(parsed, null, 2), "utf-8");
+      return true;
     }
   } catch (error) {
     console.error("Failed to delete shared storage", error);
+    return false;
   }
+  return false;
 }
 
 export async function GET(request: Request) {
@@ -273,7 +280,10 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Missing value" }, { status: 400 });
   }
 
-  await writeStorageValue(key, value);
+  const persisted = await writeStorageValue(key, value);
+  if (!persisted) {
+    return NextResponse.json({ error: "Unable to persist value" }, { status: 500 });
+  }
 
   return NextResponse.json({ ok: true });
 }
@@ -286,7 +296,10 @@ export async function DELETE(request: Request) {
     return NextResponse.json({ error: "Missing key" }, { status: 400 });
   }
 
-  await deleteStorageValue(key);
+  const removed = await deleteStorageValue(key);
+  if (!removed) {
+    return NextResponse.json({ error: "Unable to delete value" }, { status: 500 });
+  }
 
   return NextResponse.json({ ok: true });
 }

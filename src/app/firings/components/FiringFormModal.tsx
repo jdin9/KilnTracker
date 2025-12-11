@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 
 import { ADMIN_KILNS_KEY, loadAdminKilns } from "@/lib/adminStorage";
 import { getConeTemperature } from "@/lib/coneReference";
+import { persistSharedJson, readSharedJson } from "@/lib/sharedJsonStorage";
 
 // TODO: replace with real tRPC mutation (e.g., trpc.firing.create.useMutation)
 const useCreateFiring = () => ({
@@ -61,20 +62,6 @@ const toLocalDateTime = (date: Date) => {
 const badgeStyles = {
   create: "bg-blue-100 text-blue-600",
   update: "bg-amber-100 text-amber-700",
-};
-
-const safePersist = (key: string, value: string) => {
-  if (typeof window === "undefined") return;
-  try {
-    window.localStorage.setItem(key, value);
-  } catch (error) {
-    console.warn(`Unable to persist ${key} to localStorage`, error);
-    try {
-      window.sessionStorage.setItem(key, value);
-    } catch (sessionError) {
-      console.warn(`Unable to persist ${key} to sessionStorage`, sessionError);
-    }
-  }
 };
 
 export function FiringFormModal({ open, onClose, mode = "create", initialData }: FiringFormModalProps) {
@@ -144,13 +131,11 @@ export function FiringFormModal({ open, onClose, mode = "create", initialData }:
     });
   }, [kilnOptions]);
 
-  const persistOpenFiring = (payload: any) => {
+  const persistOpenFiring = async (payload: any) => {
     if (typeof window === "undefined") return;
     const kiln = kilnOptions.find((k) => k.id === form.kilnId);
-    const existing = window.localStorage.getItem("kiln-open-firings");
-    const parsed = existing ? JSON.parse(existing) : [];
-    const detailStoreRaw = window.localStorage.getItem("kiln-open-firing-details");
-    const detailsStore = detailStoreRaw ? JSON.parse(detailStoreRaw) : {};
+    const parsed = await readSharedJson("kiln-open-firings", [] as any[]);
+    const detailsStore = await readSharedJson("kiln-open-firing-details", {} as Record<string, any>);
 
     const openFiringEntry = {
       id: payload.id,
@@ -174,18 +159,12 @@ export function FiringFormModal({ open, onClose, mode = "create", initialData }:
       notes: form.notes || undefined,
     };
 
-    safePersist(
-      "kiln-open-firings",
-      JSON.stringify([...parsed, openFiringEntry]),
-    );
+    await persistSharedJson("kiln-open-firings", [...parsed, openFiringEntry]);
 
-    safePersist(
-      "kiln-open-firing-details",
-      JSON.stringify({
-        ...detailsStore,
-        [payload.id]: firingDetail,
-      }),
-    );
+    await persistSharedJson("kiln-open-firing-details", {
+      ...detailsStore,
+      [payload.id]: firingDetail,
+    });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -203,7 +182,7 @@ export function FiringFormModal({ open, onClose, mode = "create", initialData }:
       notes: form.notes || undefined,
     });
 
-    persistOpenFiring({
+    await persistOpenFiring({
       id: res.id,
       target_cone: form.targetCone,
       target_temp: targetTemp,
