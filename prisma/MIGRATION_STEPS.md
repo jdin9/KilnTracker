@@ -14,8 +14,4 @@
    ```bash
    npx prisma db push
    ```
-5. Seed sample data:
-   ```bash
-   npx prisma db seed
-   ```
-   - Ensure `package.json` has `"prisma": { "seed": "ts-node prisma/seed.ts" }` or equivalent configured.
+5. (Optional) Run your own seed script if you maintain one; the project no longer ships with placeholder data.
